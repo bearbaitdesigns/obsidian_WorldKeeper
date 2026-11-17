@@ -58,7 +58,15 @@ New and converted notes get the block automatically. Each sheet has:
 - **Banner**: click the ✎ pencil to show its tools. It holds the name, a badge, aliases, and links shown as a breadcrumb (e.g. 📍 Thalassar › Varos › The Northmarch › Saltgate). You can upload or choose a banner image, drag an image onto the banner, set its vertical focus, and switch between clear and blurred.
 - **Portrait or emblem**: click it to upload an image or choose one from your vault.
 - **Tiles**: dropdowns and checklists for value-list fields, and link pickers for linked notes, all in one row.
-- **Tabs**: one for each body heading (Notes, Backstory, History…), Details, Relationships, linked notes, and type-specific modules.
+- **Tabs**: text tabs (Notes, Backstory, History…), Details, Relationships, linked notes, and type-specific modules.
+- **Text tabs** are written right in the tab: click **✎ Edit** or double-click, type, and it saves as you go (Esc or Done to finish). Markdown and `[[links]]` work. The text is kept in the note body as a hidden block, so your frontmatter stays short, and links, backlinks and search still work:
+
+  ```markdown
+  > [!wk-tab] Backstory
+  > Grew up mapping the drowned streets of [[Saltgate]].
+  ```
+
+  Worldkeeper hides these blocks in reading view and Live Preview. Notes from earlier versions that kept text under headings like `## Backstory` show a **Move into tab** button, and the command *Move note headings (Notes, Backstory…) into their tabs* does it for your whole vault.
 - **Gallery**: add, remove and reorder images (drag or ◀ ▶), view them in a lightbox, and set any of them as the image or banner.
 
 ### Templates and the hierarchy
@@ -132,7 +140,7 @@ The writing-activity chart comes from a snapshot of your total word count, which
 
 ## Commands
 
-Open home · Open dashboards · Open encyclopedia · Create new… · Create new *type* · Create new encyclopedia entry · Convert notes to a template… · Convert current note to a template… · Insert sheet block · Reorganize vault to match folder settings · Write template files · Add to-do
+Open home · Open dashboards · Open encyclopedia · Create new… · Create new *type* · Create new encyclopedia entry · Convert notes to a template… · Convert current note to a template… · Insert sheet block · Move note headings into their tabs · Reorganize vault to match folder settings · Write template files · Add to-do
 
 ---
 

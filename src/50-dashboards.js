@@ -284,7 +284,7 @@ async function readNoteTasks() {
     if (!items.length) continue;
     const ls = (await app().vault.cachedRead(f)).split('\n');
     for (const li of items) {
-      const line = li.position.start.line; const m = (ls[line] || '').match(/^(\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) continue;
+      const line = li.position.start.line; const m = (ls[line] || '').match(/^((?:\s*>)*\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) continue;
       out.push({ ...parseTaskText(m[4]), done: m[2] !== ' ', file: f, line, raw: m[4] });
     }
   }
@@ -303,7 +303,7 @@ async function setNoteTask(t, { done, text } = {}) {
     return;
   }
   await app().vault.process(t.file, (txt) => {
-    const ls = txt.split('\n'); const m = (ls[t.line] || '').match(/^(\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) return txt;
+    const ls = txt.split('\n'); const m = (ls[t.line] || '').match(/^((?:\s*>)*\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) return txt;
     const mark = done === undefined ? m[2] : done ? 'x' : ' ';
     let body = m[4];
     if (text !== undefined) { const keep = [...(body.match(/(^|\s)#[\w/-]+/g) || []), ...(body.match(/📅\s*\d{4}-\d{2}-\d{2}/g) || [])].map((x) => x.trim()).join(' '); body = text + (keep ? ' ' + keep : ''); }

@@ -61,7 +61,7 @@ function openConverter(pre) {
         h('div', { class: 'cv-col' }, h('div', { class: 'cv-label' }, `2 · Map properties → ${T()[id].label}`),
           props.length ? h('div', { class: 'cv-map' }, ...props.flatMap((p) => { const s2 = h('select', { class: 'dropdown' }, h('option', { value: '__keep', selected: mapping[p] === '__keep' }, 'Keep as-is'), h('option', { value: '__drop', selected: mapping[p] === '__drop' }, 'Remove'), h('optgroup', { label: T()[id].label + ' fields' }, ...targetsFor(id).map((t) => h('option', { value: t.key, selected: mapping[p] === t.key }, t.label)))); s2.addEventListener('change', () => { mapping[p] = s2.value; draw(); }); return [h('code', {}, p), h('span', { class: 'cs-hint' }, '→'), s2]; })) : h('div', { class: 'cs-hint' }, 'Select notes to see their properties.'),
           h('div', { class: 'cv-label cs-mt' }, '3 · Options'),
-          ((cb) => { cb.addEventListener('change', () => { opts.body = cb.checked; }); return h('label', { class: 'cv-opt' }, cb, 'Put existing text under “## Notes” and add the template’s headings'); })(h('input', { type: 'checkbox', checked: opts.body })),
+          ((cb) => { cb.addEventListener('change', () => { opts.body = cb.checked; }); return h('label', { class: 'cv-opt' }, cb, 'Move the note’s existing text into its Notes tab'); })(h('input', { type: 'checkbox', checked: opts.body })),
           ((cb) => { cb.addEventListener('change', () => { opts.move = cb.checked; }); return h('label', { class: 'cv-opt' }, cb, 'Move into the folder set in Worldkeeper settings → Folders'); })(h('input', { type: 'checkbox', checked: opts.move }))),
         h('div', { class: 'cv-col' }, h('div', { class: 'cv-label' }, first ? `Preview · ${first.basename}` : 'Preview'), res ? [h('pre', { class: 'cv-yaml' }, '---\n' + stringifyYaml(res.fm) + '---'), res.notes.length ? h('ul', { class: 'cv-notes' }, ...res.notes.map((x) => h('li', {}, x))) : null] : h('div', { class: 'cs-hint' }, 'Nothing selected.'))),
       h('div', { class: 'cv-foot' }, h('span', { class: 'cs-hint' }, 'Notes keep their names, so links and backlinks stay intact.'), h('button', { onclick: () => close() }, 'Cancel'),
@@ -74,14 +74,13 @@ async function convertFiles(files, id, mapping, opts) {
   for (const f of files) {
     const res = convertFm(S.fm(f), id, mapping);
     await S.write(f, (fm) => { for (const k of Object.keys(fm)) delete fm[k]; Object.assign(fm, res.fm); });
+    // move the note's existing text into its first text tab (a hidden wk-tab callout), leaving the body clean
+    const firstTab = T()[id].body[0] && T()[id].body[0].heading;
     await app().vault.process(f, (txt) => {
       const m = txt.match(/^---\n[\s\S]*?\n---\n?/); const head = m ? m[0] : ''; let body = txt.slice(head.length);
+      const rest = body.replace(/```worldkeeper\s*\n```\s*\n?/, '').trim();
+      if (opts.body && firstTab && rest && !TAB_HEAD_RE.test(rest.split('\n')[0])) return head + '```worldkeeper\n```\n\n' + encodeTab(firstTab, rest);
       if (!/```worldkeeper\s*\n/.test(body)) body = '```worldkeeper\n```\n' + (body.startsWith('\n') ? '' : '\n') + body;
-      if (opts.body) {
-        const rest = body.replace(/```worldkeeper\s*\n```\s*\n?/, '');
-        if (rest.trim() && !/^#{1,6}\s/m.test(rest.trim().split('\n')[0])) body = body.replace(/(```worldkeeper\s*\n```\s*\n?)/, '$1\n## Notes\n');
-        for (const b of T()[id].body) if (!new RegExp(`^#{1,6}\\s+${b.heading.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'mi').test(body)) body = body.replace(/\s*$/, '') + `\n\n## ${b.heading}\n`;
-      }
       return head + body;
     });
     if (opts.move) {
@@ -105,6 +104,18 @@ function reorganize() {
     let n = 0; for (const [f, to] of moves) { if (app().vault.getAbstractFileByPath(to)) continue; await S.ensureFolder(to.split('/').slice(0, -1).join('/')); await app().fileManager.renameFile(f, to); n++; }
     toast(`Moved ${n} notes`); S.dirty(); P.refreshSoon(300);
   }, 'Move notes');
+}
+/** move "## Heading" sections in every Worldkeeper note into their text tabs */
+async function migrateHeadings() {
+  const todo = [];
+  for (const id of Object.keys(T())) for (const f of S.notesOf(id)) for (const b of T()[id].body) { const sec = await headingSection(f, b.heading); if (sec) todo.push([f, b.heading, sec.body]); }
+  if (!todo.length) { toast('No notes have section headings to move'); return; }
+  const notes = new Set(todo.map((x) => x[0].path)).size;
+  confirm2(`Move ${todo.length} section${todo.length === 1 ? '' : 's'} into tabs?`, h('div', {}, h('p', {}, `${notes} note${notes === 1 ? '' : 's'} have text under headings like “## Notes” or “## Backstory”. Each section moves into its tab (kept in the note body as a hidden block) and the heading is removed.`),
+    h('pre', { class: 'cv-yaml' }, todo.slice(0, 10).map(([f, hd]) => `${f.basename} → ${hd}`).join('\n') + (todo.length > 10 ? `\n…and ${todo.length - 10} more` : ''))), async () => {
+    let n = 0; for (const [f, hd] of todo) { if (await moveHeadingIntoTab(f, hd)) n++; await new Promise((r) => setTimeout(r, 30)); }
+    toast(`Moved ${n} sections into tabs`); S.dirty(); P.refreshSoon(200);
+  }, 'Move sections');
 }
 async function writeTemplates() {
   const folder = normalizePath(ST().templatesFolder || 'Templates'); await S.ensureFolder(folder); let n = 0;

@@ -62,7 +62,7 @@ class WorldkeeperSettingTab extends PluginSettingTab {
       ap(root, btn('+ Add link field', () => { t.links.push(L('newLink', 'New link', 'tile', ['character'])); redraw(); }));
       ap(root, head('Layout'),
         row('Banner text lists', '“property:Label”, one per line', area(() => t.text.map((x) => `${x.key}:${x.label}`).join('\n'), (v) => { t.text = v.map((x) => { const [k, l] = x.split(':'); return { key: k.trim(), label: (l || k).trim() }; }); })),
-        row('Body section tabs', '“Heading|icon”, one per line. Each shows that heading of the note.', area(() => t.body.map((b) => `${b.heading}|${b.icon}`).join('\n'), (v) => { t.body = v.map((x) => { const [a, b] = x.split('|'); return { heading: a.trim(), icon: (b || '📄').trim() }; }); })),
+        row('Text tabs', '“Name|icon”, one per line. Each is a tab you write in. Its text is kept in the note body as a hidden “> [!wk-tab] Name” block.', area(() => t.body.map((b) => `${b.heading}|${b.icon}`).join('\n'), (v) => { t.body = v.map((x) => { const [a, b] = x.split('|'); return { heading: a.trim(), icon: (b || '📄').trim() }; }); })),
         row('Tab order', 'Labels in order; anything unlisted goes last', area(() => (t.tabOrder || []).join('\n'), (v) => { t.tabOrder = v; })));
       if (this.type === 'magic') ap(root, head('Magic system lists'), row('Rule kinds', 'Columns on the Rules & limits tab', area(() => s.ruleKinds.map((r) => r.k).join('\n'), (v) => { s.ruleKinds = v.map((k, i) => s.ruleKinds.find((r) => r.k === k) || { k, c: ['#5b9bd5', '#d9a85a', '#d9534f', '#9b6bd3', '#5fc27e'][i % 5], i: '•' }); })));
       if (this.type === 'language') ap(root, head('Conlang lists'), row('Parts of speech', '', area(() => s.posList.join('\n'), (v) => { s.posList = v; })));
@@ -103,7 +103,8 @@ class WorldkeeperSettingTab extends PluginSettingTab {
         row('Gallery property', '', txt(s, 'galleryKey')), row('Details property', '', txt(s, 'detailsKey')), row('Relationships property', '', txt(s, 'relationshipKey')),
         head('Encyclopedia'), row('Entry type value', 'Encyclopedia notes have type: <this>', txt(s, 'entryType')), row('Categories', 'One per line', area(() => s.encCategories.join('\n'), (v) => { s.encCategories = v; })),
         head('Tools'), row('Convert existing notes', 'Map old properties onto any template in bulk', btn('⇪ Open converter', () => openConverter([]), true)),
-        row('Template files', `Write a template note for every type to ${s.templatesFolder}/`, btn('Write template files', () => writeTemplates())));
+        row('Template files', `Write a template note for every type to ${s.templatesFolder}/`, btn('Write template files', () => writeTemplates())),
+        row('Move headings into tabs', 'Older notes kept Notes/Backstory text under headings in the body. Move it all into the tabs.', btn('Move headings…', () => migrateHeadings())));
     }
   }
 }

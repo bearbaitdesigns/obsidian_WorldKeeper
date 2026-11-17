@@ -1140,3 +1140,14 @@
 .wk .hd-twocol > .hd-col {display: flex !important; flex-direction: column; gap: 12px; min-width: 0; width: auto; margin: 0 !important; padding: 0 !important;}
 .wk .hd-col > .wk-card {margin: 0 !important; width: auto !important; max-width: none !important; float: none !important; flex: 0 0 auto; box-sizing: border-box;}
 @media (max-width: 760px) {.wk .hd-twocol {grid-template-columns: minmax(0, 1fr) !important;}}
+/* 0.1.6: text tabs edited in place */
+.wk .cs-text-edit {width: 100%; min-height: 180px; resize: vertical; font: inherit; font-size: var(--font-text-size); line-height: 1.6; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--cs-line); background: var(--background-primary);}
+.wk .cs-text-edit:focus {border-color: var(--cs-accent); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--cs-accent) 25%, transparent);}
+.wk .cs-section-actions {display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-bottom: 6px;}
+.wk .cs-section-md {cursor: text; padding: 2px 2px 6px;}
+.wk .cs-empty.is-clickable {cursor: pointer;}
+.wk .cs-empty.is-clickable:hover {border-color: var(--cs-accent); color: var(--text-muted);}
+.wk .wk-legacy {margin-bottom: 12px;}
+/* text-tab blocks live in the note body but are shown only inside their sheet tab (intentionally unscoped) */
+.callout[data-callout="wk-tab"] {display: none !important;}
+.markdown-source-view.mod-cm6 .cm-embed-block:has(> .callout[data-callout="wk-tab"]) {display: none !important;}

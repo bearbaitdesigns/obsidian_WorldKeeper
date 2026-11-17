@@ -149,7 +149,7 @@ function templateFm(id) {
   fm[s.detailsKey] = {};
   return fm;
 }
-function templateBody(id) { return '```worldkeeper\n```\n' + T()[id].body.map((b) => `\n## ${b.heading}\n`).join(''); }
+function templateBody(id) { return '```worldkeeper\n```\n'; }
 function templateText(id) { return `---\n${stringifyYaml(templateFm(id))}---\n${templateBody(id)}`; }
 
 async function createNote(id, name, extra = {}, { open = true, chainFrom = null } = {}) {

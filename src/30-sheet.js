@@ -100,7 +100,7 @@ async function renderSheet(f, id, comp) {
       : x.mod === 'conlang' ? arr(fm.lexicon).length : x.mod === 'gods' ? arr(fm.gods).length : x.mod === 'worship' ? worshipOf(f).length : x.mod === 'scenes' ? pwCards.length : typeof x.mod === 'object' ? S.refsOf(f, x.mod).length : 0;
   ap(root, h('div', { class: 'cs-tabs' }, ...TB.map((x) => { const c = count(x); return h('button', { class: 'cs-tab' + (x.id === act ? ' is-active' : ''), onclick: () => { P.tabState.set(f.path, x.id); P.refreshSoon(0); } }, h('span', { class: 'cs-tab-icon' }, x.icon), h('span', {}, x.label), c ? h('span', { class: 'cs-tab-count' }, String(c)) : null); })));
   const panel = h('div', { class: 'cs-panel' }); const x = TB.find((y) => y.id === act);
-  if (x.body) await renderBodySection(panel, f, x.body, comp);
+  if (x.body) await renderTextTab(panel, f, x.body, comp);
   else if (x.id === 'details') ap(panel, renderDetails(f, fm));
   else if (x.lf) {
     const g = h('div', { class: 'cs-cards' });
@@ -166,24 +166,94 @@ function domainControl(parent, f, df, fm) {
   } }, vals.length ? null : h('span', { class: 'cs-null' }, 'null'), '☰'));
 }
 
-/* ---------- body sections ---------- */
-async function renderBodySection(panel, f, heading, comp) {
-  const cache = app().metadataCache.getFileCache(f); const hs = (cache && cache.headings) || [];
-  const i = hs.findIndex((x) => x.heading.trim().toLowerCase() === heading.toLowerCase());
-  const actions = h('div', { class: 'cs-section-actions' });
-  ap(panel, actions);
-  if (i < 0) {
-    ap(panel, empty(`No “## ${heading}” heading in this note yet.`));
-    ap(actions, h('button', { onclick: () => app().vault.process(f, (txt) => txt.replace(/\s*$/, '') + `\n\n## ${heading}\n`) }, `Add ## ${heading}`));
+/* ---------- text tabs (Notes, Backstory, History…) ----------
+   Each tab's text lives in the note body as a hidden callout:
+     > [!wk-tab] Backstory
+     > text…
+   Worldkeeper hides these blocks in reading view / Live Preview and edits them in the tab,
+   so long text stays out of the frontmatter while links and search keep working.
+   Older notes that kept text under a "## Heading" can move it in with one click. */
+const TAB_HEAD_RE = /^>\s*\[!wk-tab\][+-]?\s*(.*?)\s*$/i;
+/** all wk-tab blocks in a note's text → Map(lowercase name → {name, text, start, end}) */
+function parseTabs(txt) {
+  const out = new Map(); const ls = txt.split('\n'); let off = 0; let i = 0;
+  const offs = []; for (const l of ls) { offs.push(off); off += l.length + 1; }
+  while (i < ls.length) {
+    const m = ls[i].match(TAB_HEAD_RE);
+    if (!m) { i++; continue; }
+    const start = offs[i]; let j = i + 1; const body = [];
+    while (j < ls.length && /^>/.test(ls[j])) { body.push(ls[j].replace(/^>\s?/, '')); j++; }
+    const end = j < ls.length ? offs[j] : txt.length;
+    out.set(m[1].trim().toLowerCase(), { name: m[1].trim(), text: body.join('\n').trim(), start, end });
+    i = j;
+  }
+  return out;
+}
+const encodeTab = (name, text) => `> [!wk-tab] ${name}\n` + text.split('\n').map((l) => (l.trim() ? '> ' + l : '>')).join('\n') + '\n';
+/** where a new tab block goes: after the last wk-tab block, else right after the sheet block, else at the end */
+function insertTabBlock(txt, enc) {
+  const blocks = [...parseTabs(txt).values()];
+  if (blocks.length) { const at = Math.max(...blocks.map((b) => b.end)); return (txt.slice(0, at).replace(/\s*$/, '\n') + '\n' + enc + txt.slice(at)).replace(/\n{3,}/g, '\n\n'); }
+  const m = txt.match(/```worldkeeper\s*\n```[ \t]*\n?/);
+  if (m) { const at = m.index + m[0].length; return (txt.slice(0, at) + '\n' + enc + '\n' + txt.slice(at).replace(/^\n+/, '')).replace(/\n{3,}/g, '\n\n'); }
+  return txt.replace(/\s*$/, '') + '\n\n' + enc;
+}
+async function readTab(f, heading) { const b = parseTabs(await app().vault.cachedRead(f)).get(String(heading).trim().toLowerCase()); return b ? b.text : ''; }
+async function writeTab(f, heading, text) {
+  await app().vault.process(f, (txt) => {
+    const b = parseTabs(txt).get(String(heading).trim().toLowerCase()); const v = String(text || '').replace(/\s+$/, '');
+    const enc = v.trim() ? encodeTab(String(heading).trim(), v) : '';
+    if (b) return (txt.slice(0, b.start) + enc + txt.slice(b.end)).replace(/\n{3,}/g, '\n\n');
+    return enc ? insertTabBlock(txt, enc) : txt;
+  });
+}
+/** text under a "## heading" in the note body (older notes) */
+async function headingSection(f, heading) {
+  const hs = ((app().metadataCache.getFileCache(f) || {}).headings) || [];
+  const i = hs.findIndex((x) => x.heading.trim().toLowerCase() === String(heading).trim().toLowerCase()); if (i < 0) return null;
+  const hd = hs[i]; const next = hs.slice(i + 1).find((y) => y.level <= hd.level);
+  const txt = await app().vault.cachedRead(f);
+  let end = next ? next.position.start.offset : txt.length; const tab = txt.slice(hd.position.end.offset, end).search(/^>\s*\[!wk-tab\]/mi); if (tab >= 0) end = hd.position.end.offset + tab;
+  return { body: txt.slice(hd.position.end.offset, end).trim() };
+}
+async function moveHeadingIntoTab(f, heading) {
+  let moved = false;
+  await app().vault.process(f, (txt) => {
+    const re = new RegExp(`^#{1,6}\\s+${String(heading).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'mi'); const m = re.exec(txt); if (!m) return txt;
+    const after = txt.slice(m.index + m[0].length); const nx = after.search(/^(#{1,6}\s|>\s*\[!wk-tab\])/mi); const end = nx < 0 ? txt.length : m.index + m[0].length + nx;
+    const sec = txt.slice(m.index + m[0].length, end).trim(); let out = (txt.slice(0, m.index).replace(/\s*$/, '\n') + txt.slice(end)).replace(/\n{3,}/g, '\n\n');
+    const b = parseTabs(out).get(String(heading).trim().toLowerCase()); const merged = [b ? b.text : '', sec].filter((t) => t && t.trim()).join('\n\n');
+    if (merged) { const enc = encodeTab(String(heading).trim(), merged); out = b ? out.slice(0, b.start) + enc + out.slice(b.end) : insertTabBlock(out, enc); }
+    moved = true; return out.replace(/\n{3,}/g, '\n\n');
+  });
+  return moved;
+}
+async function renderTextTab(panel, f, heading, comp) {
+  const text = await readTab(f, heading); const key = String(heading).trim();
+  const st = P.mem(f.path, 'edit:' + key, { editing: false });
+  const legacy = await headingSection(f, heading);
+  if (legacy && legacy.body) ap(panel, h('div', { class: 'cv-callout wk-legacy' }, h('div', {}, h('b', {}, `This note has text under a “## ${heading}” heading.`), h('div', { class: 'cs-hint' }, 'Move it into this tab so it lives here instead of under a heading.')),
+    h('button', { class: 'mod-cta', onclick: async () => { await moveHeadingIntoTab(f, heading); toast(`Moved “${heading}” into its tab`); } }, 'Move into tab')));
+  if (st.editing) {
+    const ta = h('textarea', { class: 'cs-text-edit', placeholder: `Write ${heading.toLowerCase()}… Markdown and [[links]] work.` }, text);
+    let t = null; let saved = text;
+    const flush = async () => { clearTimeout(t); if (ta.value !== saved) { saved = ta.value; await writeTab(f, heading, ta.value); } };
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(180, ta.scrollHeight + 4) + 'px'; };
+    const done = async () => { await flush(); st.editing = false; ta.blur(); P.refreshSoon(0); };
+    ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(flush, 900); grow(); });
+    ta.addEventListener('blur', () => flush());
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(); } });
+    ta.addEventListener('input', () => { const pos = ta.selectionStart; if (ta.value.slice(0, pos).endsWith('[[')) suggest({ items: S.files().filter((x) => S.managed(x) || S.isEntry(x)).sort(byName).map((x) => ({ label: x.basename, sub: typeLabel(x), value: x.basename })), placeholder: 'Link a note…', onPick: (n) => { ta.value = ta.value.slice(0, pos) + n + ']]' + ta.value.slice(pos); ta.focus(); ta.setSelectionRange(pos + n.length + 2, pos + n.length + 2); flush(); } }); });
+    ap(panel, h('div', { class: 'cs-section-actions' }, h('span', { class: 'cs-hint' }, 'Saves as you type · Esc to finish'), h('button', { class: 'mod-cta', onclick: done }, '✓ Done')), ta);
+    setTimeout(() => { grow(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 20);
     return;
   }
-  const hd = hs[i]; const next = hs.slice(i + 1).find((y) => y.level <= hd.level);
-  const text = await app().vault.cachedRead(f);
-  const body = text.slice(hd.position.end.offset, next ? next.position.start.offset : undefined).trim();
-  ap(actions, h('button', { onclick: (e) => openName(`${f.basename}#${hd.heading}`, f.path, e) }, '✎ Edit section'));
-  const md = h('div', { class: 'cs-section-md markdown-rendered' }); ap(panel, md);
-  if (body) await MarkdownRenderer.render(app(), body, md, f.path, comp);
-  else ap(md, empty(`Nothing under “${hd.heading}” yet. Write below the heading in the note.`));
+  const edit = () => { st.editing = true; P.refreshSoon(0); };
+  ap(panel, h('div', { class: 'cs-section-actions' }, h('button', { onclick: edit }, '✎ Edit')));
+  if (!text) { const e = empty(`Nothing here yet. Click to write ${heading.toLowerCase()}.`); e.classList.add('is-clickable'); e.addEventListener('click', edit); ap(panel, e); return; }
+  const md = h('div', { class: 'cs-section-md markdown-rendered', title: 'Double-click to edit' }); ap(panel, md);
+  md.addEventListener('dblclick', (e) => { if (!e.target.closest('a')) edit(); });
+  await MarkdownRenderer.render(app(), text, md, f.path, comp);
 }
 
 /* ---------- details ---------- */

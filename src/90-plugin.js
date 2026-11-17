@@ -48,6 +48,7 @@ class WorldkeeperPlugin extends Plugin {
     this.addCommand({ id: 'convert-current', name: 'Convert current note to a template…', checkCallback: (check) => { const f = app().workspace.getActiveFile(); if (!f || f.extension !== 'md' || S.managed(f)) return false; if (!check) openConverter([f]); return true; } });
     this.addCommand({ id: 'insert-sheet', name: 'Insert sheet block', editorCallback: (ed) => ed.replaceSelection('```worldkeeper\n```\n') });
     this.addCommand({ id: 'reorganize', name: 'Reorganize vault to match folder settings', callback: () => reorganize() });
+    this.addCommand({ id: 'move-headings-into-tabs', name: 'Move note headings (Notes, Backstory…) into their tabs', callback: () => migrateHeadings() });
     this.addCommand({ id: 'write-templates', name: 'Write template files', callback: () => writeTemplates() });
     this.addCommand({ id: 'add-todo', name: 'Add to-do', callback: () => prompt2('New to-do', 'Task… use [[Name]] to link a note', async (v) => { const l = await readTodos(); l.unshift({ done: false, text: v, due: '', tag: '' }); await writeTodos(l); toast('Added to your to-do list'); this.refreshSoon(100); }) });
 
