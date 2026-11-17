@@ -51,7 +51,7 @@ function renderEntryFoot(f, open) {
   return h('div', { class: 'enc-foot' },
     h('div', {}, groupTitle('See also'), see),
     h('div', {}, h('div', { class: 'cs-group-title' }, 'Related entries', h('span', { class: 'enc-note' }, 'share a linked element')),
-      rel.length ? h('div', { class: 'bars' }, ...rel.map(([o, sh]) => { const a = h('a', { class: 'wk-link' }, o.basename); a.addEventListener('click', (e) => open(o, e)); return h('div', { class: 'enc-rel' }, a, h('span', { class: 'cs-hint' }, sh.map((x) => x.basename).join(', '))); })) : h('div', { class: 'cs-hint' }, 'None yet.')));
+      rel.length ? h('div', { class: 'wk-bars' }, ...rel.map(([o, sh]) => { const a = h('a', { class: 'wk-link' }, o.basename); a.addEventListener('click', (e) => open(o, e)); return h('div', { class: 'enc-rel' }, a, h('span', { class: 'cs-hint' }, sh.map((x) => x.basename).join(', '))); })) : h('div', { class: 'cs-hint' }, 'None yet.')));
 }
 class EntryChild extends MarkdownRenderChild {
   constructor(el, file) { super(el); this.file = file; }

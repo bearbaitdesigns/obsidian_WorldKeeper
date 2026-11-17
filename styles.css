@@ -734,26 +734,26 @@
 .wk .hd-hero .cs-banner-tools {opacity:.8;right:auto;left:14px;top:14px}
 .wk .hd-hero:hover .cs-banner-tools {opacity:1}
 
-.wk .ring {--p:0;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--interactive-accent) calc(var(--p)*1%),rgba(255,255,255,.18) 0);display:grid;place-items:center;flex:0 0 auto}
+.wk .wk-ring {--p:0;width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--interactive-accent) calc(var(--p)*1%),rgba(255,255,255,.18) 0);display:grid;place-items:center;flex:0 0 auto}
 
-.wk .ring div {width:96px;height:96px;border-radius:50%;background:rgba(0,0,0,.55);display:grid;place-items:center;text-align:center;line-height:1.1}
+.wk .wk-ring div {width:96px;height:96px;border-radius:50%;background:rgba(0,0,0,.55);display:grid;place-items:center;text-align:center;line-height:1.1}
 
-.wk .ring b {font-size:1.5em;display:block}
-.wk .ring small {font-size:.7em;opacity:.8}
+.wk .wk-ring b {font-size:1.5em;display:block}
+.wk .wk-ring small {font-size:.7em;opacity:.8}
 
-.wk .kpis {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:16px 0}
+.wk .wk-kpis {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:16px 0}
 
-.wk .kpi {background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:12px;padding:12px 14px}
+.wk .wk-kpi {background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:12px;padding:12px 14px}
 
-.wk .kpi span {font-size:.7em;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted)}
+.wk .wk-kpi span {font-size:.7em;text-transform:uppercase;letter-spacing:.09em;color:var(--text-muted)}
 
-.wk .kpi b {display:block;font-size:1.55em;margin-top:2px}
+.wk .wk-kpi b {display:block;font-size:1.55em;margin-top:2px}
 
-.wk .kpi small {color:var(--text-faint);font-size:.75em}
+.wk .wk-kpi small {color:var(--text-faint);font-size:.75em}
 
 .wk .hd-cols {display:grid;grid-template-columns:1.35fr 1fr;gap:16px;margin-bottom:16px}
 
-.wk .card {background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:14px;padding:14px 16px}
+.wk .wk-card {background:var(--background-secondary);border:1px solid var(--background-modifier-border);border-radius:14px;padding:14px 16px}
 
 .wk .card-h {display:flex;align-items:center;gap:8px;margin-bottom:12px}
 
@@ -761,10 +761,10 @@
 
 .wk .card-h .sp {flex:1}
 
-.wk .pill {font-size:.7em;padding:2px 9px;border-radius:999px;background:var(--background-modifier-hover);color:var(--text-muted)}
+.wk .wk-pill {font-size:.7em;padding:2px 9px;border-radius:999px;background:var(--background-modifier-hover);color:var(--text-muted)}
 
-.wk .pill.ok {background:rgba(60,170,90,.18);color:#5fc27e}
-.wk .pill.warn {background:rgba(200,150,62,.18);color:#d9a85a}
+.wk .wk-pill.ok {background:rgba(60,170,90,.18);color:#5fc27e}
+.wk .wk-pill.warn {background:rgba(200,150,62,.18);color:#d9a85a}
 
 .wk .pw-status {display:flex;height:12px;border-radius:999px;overflow:hidden;margin:6px 0 8px;background:var(--background-modifier-hover)}
 
@@ -778,29 +778,29 @@
 
 .wk .pw-mini b {display:block;font-size:1.5em;color:var(--text-normal)}
 
-.wk .bars {display:flex;flex-direction:column;gap:5px}
+.wk .wk-bars {display:flex;flex-direction:column;gap:5px}
 
-.wk .bar {display:grid;grid-template-columns:130px 1fr 64px;gap:8px;align-items:center;font-size:.8em}
+.wk .wk-bar {display:grid;grid-template-columns:130px 1fr 64px;gap:8px;align-items:center;font-size:.8em}
 
-.wk .bar .t {height:8px;border-radius:999px;background:var(--background-modifier-hover);overflow:hidden}
+.wk .wk-bar .t {height:8px;border-radius:999px;background:var(--background-modifier-hover);overflow:hidden}
 
-.wk .bar .t i {display:block;height:100%;border-radius:999px}
+.wk .wk-bar .t i {display:block;height:100%;border-radius:999px}
 
-.wk .bar .n {text-align:right;color:var(--text-muted);font-variant-numeric:tabular-nums}
+.wk .wk-bar .n {text-align:right;color:var(--text-muted);font-variant-numeric:tabular-nums}
 
-.wk .bar .l {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wk .wk-bar .l {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.wk .bar a, .wk .wk-link {color:var(--link-color);cursor:pointer;text-decoration:none}
+.wk .wk-bar a, .wk .wk-link {color:var(--link-color);cursor:pointer;text-decoration:none}
 
-.wk .act {display:flex;align-items:flex-end;gap:5px;height:110px;margin:6px 0 4px}
+.wk .wk-act {display:flex;align-items:flex-end;gap:5px;height:110px;margin:6px 0 4px}
 
-.wk .act div {flex:1;background:var(--interactive-accent);border-radius:4px 4px 0 0;opacity:.85;position:relative;min-height:2px}
+.wk .wk-act div {flex:1;background:var(--interactive-accent);border-radius:4px 4px 0 0;opacity:.85;position:relative;min-height:2px}
 
-.wk .act div:hover {opacity:1}
+.wk .wk-act div:hover {opacity:1}
 
-.wk .act div span {position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text-muted);white-space:nowrap;display:none}
+.wk .wk-act div span {position:absolute;bottom:100%;left:50%;transform:translateX(-50%);font-size:10px;color:var(--text-muted);white-space:nowrap;display:none}
 
-.wk .act div:hover span {display:block}
+.wk .wk-act div:hover span {display:block}
 
 .wk .act-x {display:flex;gap:5px;font-size:10px;color:var(--text-faint)}
 .wk .act-x span {flex:1;text-align:center}
@@ -815,26 +815,26 @@
 .wk .atile b {display:block;font-size:1.4em;margin-top:4px}
 .wk .atile span {font-size:.78em;color:var(--text-muted)}
 
-.wk .tree {font-size:.88em}
+.wk .wk-tree {font-size:.88em}
 
-.wk .tree details {margin-left:14px}
-.wk .tree>details {margin-left:0}
+.wk .wk-tree details {margin-left:14px}
+.wk .wk-tree>details {margin-left:0}
 
-.wk .tree summary {cursor:pointer;padding:3px 4px;border-radius:5px;list-style:none;display:flex;gap:6px;align-items:center}
+.wk .wk-tree summary {cursor:pointer;padding:3px 4px;border-radius:5px;list-style:none;display:flex;gap:6px;align-items:center}
 
-.wk .tree summary::-webkit-details-marker {display:none}
+.wk .wk-tree summary::-webkit-details-marker {display:none}
 
-.wk .tree summary:hover {background:var(--background-modifier-hover)}
+.wk .wk-tree summary:hover {background:var(--background-modifier-hover)}
 
-.wk .tree summary .c {color:var(--text-faint);font-size:.85em;margin-left:auto}
+.wk .wk-tree summary .c {color:var(--text-faint);font-size:.85em;margin-left:auto}
 
-.wk .tree .leaf {margin-left:14px;padding:3px 4px 3px 22px;cursor:pointer;border-radius:5px}
+.wk .wk-tree .wk-leaf {margin-left:14px;padding:3px 4px 3px 22px;cursor:pointer;border-radius:5px}
 
-.wk .tree .leaf:hover {background:var(--background-modifier-hover)}
+.wk .wk-tree .wk-leaf:hover {background:var(--background-modifier-hover)}
 
-.wk .tree .caret {width:12px;display:inline-block;color:var(--text-faint);transition:transform .12s}
+.wk .wk-tree .caret {width:12px;display:inline-block;color:var(--text-faint);transition:transform .12s}
 
-.wk .tree details[open]>summary .caret {transform:rotate(90deg)}
+.wk .wk-tree details[open]>summary .caret {transform:rotate(90deg)}
 
 .wk .att li {display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--background-modifier-border);font-size:.86em}
 
@@ -922,7 +922,7 @@
 
 
 @media(max-width:900px){.wk .dm-cols {grid-template-columns:1fr}
-.wk .kpis {grid-template-columns:repeat(2,1fr)}
+.wk .wk-kpis {grid-template-columns:repeat(2,1fr)}
 .wk .hd-cols, .wk .cl-grid {grid-template-columns:1fr}
 .wk .atlas-tiles {grid-template-columns:repeat(3,1fr)}
 .wk .atlas {grid-template-columns:1fr}
@@ -1082,7 +1082,7 @@
 .wk .wk-toggle.is-on {background:var(--interactive-accent) !important}
 .wk .wk-toggle.is-on:after {left:18px}
 
-.wk .pill {font-size:.72em;padding:2px 9px;border-radius:999px;background:var(--background-modifier-hover);color:var(--text-muted)}
+.wk .wk-pill {font-size:.72em;padding:2px 9px;border-radius:999px;background:var(--background-modifier-hover);color:var(--text-muted)}
 
 
 /* =================== home banner + plot weaver (0.1.1) =================== */
@@ -1104,12 +1104,12 @@
 .wk .cs-hero:hover .wk-pencil, .wk .hd-hero:hover .wk-pencil, .wk .cs-banner-tools.is-open .wk-pencil {opacity: 1;}
 .wk .cs-banner-tools.is-open .wk-pencil {background: var(--cs-accent) !important; border-color: transparent !important;}
 .wk .hd-cols {gap: 12px; margin-bottom: 12px; align-items: start;}
-.wk .kpis {margin: 12px 0;}
+.wk .wk-kpis {margin: 12px 0;}
 .wk .atlas-pills {margin-bottom: 12px;}
-.wk .card {padding: 12px 14px;}
+.wk .wk-card {padding: 12px 14px;}
 .wk .card-h {margin-bottom: 10px; min-height: 0;}
 .wk .card-h h3 {margin: 0; line-height: 1.3;}
-.wk .card p, .wk .card ul {margin-top: 0;}
+.wk .wk-card p, .wk .wk-card ul {margin-top: 0;}
 .wk .sm-p {margin: 0 0 8px;}
 .wk .sm-p:last-of-type {margin-bottom: 4px;}
 .wk .td-item.is-note .td-text {color: var(--text-normal);}
@@ -1120,8 +1120,8 @@
 @media (max-width: 900px) {.wk .hd-masonry {grid-template-columns: 1fr;}}
 /* 0.1.3: balanced masonry — cards flow into two columns that end at about the same height */
 .wk .hd-masonry {display: block; columns: 2 380px; column-gap: 12px; margin-bottom: 12px;}
-.wk .hd-masonry > .card {break-inside: avoid; page-break-inside: avoid; display: block; width: 100%; margin: 0 0 12px; box-sizing: border-box;}
-.wk .hd-masonry > .card {min-width: 0; overflow: hidden;}
+.wk .hd-masonry > .wk-card {break-inside: avoid; page-break-inside: avoid; display: block; width: 100%; margin: 0 0 12px; box-sizing: border-box;}
+.wk .hd-masonry > .wk-card {min-width: 0; overflow: hidden;}
 .wk .card-h {flex-wrap: wrap; row-gap: 6px;}
 .wk .card-h > * {min-width: 0;}
 .wk .pw-mini {grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));}
@@ -1129,9 +1129,14 @@
 .wk .td-add .td-in {min-width: 140px;}
 .wk .td-meta {flex-wrap: wrap; justify-content: flex-end; min-width: 0;}
 .wk .td-text {overflow-wrap: anywhere;}
-.wk .tree summary .c {white-space: nowrap;}
+.wk .wk-tree summary .c {white-space: nowrap;}
 /* 0.1.4: fixed card order — left: About, Plot Weaver, World tree · right: To-do, Activity, Shared */
 .wk .hd-twocol {display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 12px;}
 .wk .hd-twocol > .hd-col {display: flex; flex-direction: column; gap: 12px; min-width: 0;}
-.wk .hd-twocol .card {min-width: 0; overflow: hidden;}
+.wk .hd-twocol .wk-card {min-width: 0; overflow: hidden;}
 @media (max-width: 760px) {.wk .hd-twocol {grid-template-columns: minmax(0, 1fr);}}
+/* 0.1.5: lock Home layout against theme/plugin styles */
+.wk .hd-twocol {display: grid !important; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; column-gap: 12px !important; row-gap: 12px !important; width: 100%; max-width: none; margin: 0 0 12px !important; padding: 0 !important;}
+.wk .hd-twocol > .hd-col {display: flex !important; flex-direction: column; gap: 12px; min-width: 0; width: auto; margin: 0 !important; padding: 0 !important;}
+.wk .hd-col > .wk-card {margin: 0 !important; width: auto !important; max-width: none !important; float: none !important; flex: 0 0 auto; box-sizing: border-box;}
+@media (max-width: 760px) {.wk .hd-twocol {grid-template-columns: minmax(0, 1fr) !important;}}

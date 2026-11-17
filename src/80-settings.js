@@ -75,13 +75,13 @@ class WorldkeeperSettingTab extends PluginSettingTab {
       const nv = s.novel, pw = s.plotweaver;
       const scopeSel = h('select', { class: 'dropdown' }, ...[['all', 'All notes'], ['worldkeeper', 'Worldkeeper notes only'], ['off', 'Only my to-do list']].map(([v, l]) => h('option', { value: v, selected: (s.todoScope || 'all') === v }, l))); scopeSel.addEventListener('change', () => { s.todoScope = scopeSel.value; save(); });
       const scopeRow = row('Tasks from other notes', 'Checkbox tasks (- [ ]) written in notes also appear on the Home to-do card', scopeSel);
-      const pwStatusRow = row('Status', 'Checking…', h('span', { class: 'pill' }, '…'));
+      const pwStatusRow = row('Status', 'Checking…', h('span', { class: 'wk-pill' }, '…'));
       const novelSel = h('select', { class: 'dropdown' }, h('option', { value: '' }, 'Plot Weaver’s current novel'));
       novelSel.addEventListener('change', () => { pw.novel = novelSel.value; save(); });
       const pwNovelRow = row('Novel', 'Which Plot Weaver novel the Home dashboard tracks', novelSel);
       const pwFieldsRow = row('Status & word-count fields', 'Read from Plot Weaver’s own settings, so they always match', h('code', {}, '…'));
       pwLoad().then((x) => {
-        pwStatusRow.replaceWith(row('Status', x.installed ? `Detected plot-weaver ${x.version}${x.enabled ? '' : ' (disabled; reading its saved data)'}` : 'Not installed', h('span', { class: 'pill ' + (x.installed && x.enabled ? 'ok' : 'warn') }, x.installed ? (x.enabled ? 'connected' : 'disabled') : 'missing')));
+        pwStatusRow.replaceWith(row('Status', x.installed ? `Detected plot-weaver ${x.version}${x.enabled ? '' : ' (disabled; reading its saved data)'}` : 'Not installed', h('span', { class: 'wk-pill ' + (x.installed && x.enabled ? 'ok' : 'warn') }, x.installed ? (x.enabled ? 'connected' : 'disabled') : 'missing')));
         for (const n of (x.data && x.data.novels) || []) ap(novelSel, h('option', { value: n.title, selected: pw.novel === n.title }, n.title + (x.data.activeNovelId === n.id ? ' (current)' : '')));
         if (pw.novel && !((x.data && x.data.novels) || []).some((n) => n.title === pw.novel)) ap(novelSel, h('option', { value: pw.novel, selected: true }, pw.novel + ' (not found)'));
         pwFieldsRow.querySelector('code').textContent = `status: ${x.settings.statusField} · words: ${x.settings.wordsField}`;

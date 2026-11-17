@@ -123,10 +123,10 @@ function attention() {
   return out;
 }
 function worldTree() {
-  const wrap = h('div', { class: 'tree' });
+  const wrap = h('div', { class: 'wk-tree' });
   const node = (f, depth) => {
     const kids = S.childrenOf(f); const a = h('a', { class: 'wk-link' }, f.basename); a.addEventListener('click', (e) => { e.preventDefault(); openFile(f, e); });
-    if (!kids.length) { const l = h('div', { class: 'leaf' }, typeIcon(f) + ' ', a); return l; }
+    if (!kids.length) { const l = h('div', { class: 'wk-leaf' }, typeIcon(f) + ' ', a); return l; }
     return h('details', { open: depth < 2 }, h('summary', {}, h('span', { class: 'caret' }, '▸'), h('span', {}, typeIcon(f)), a, h('span', { class: 'c' }, S.descendants(f).length + ' inside')), ...kids.map((k) => node(k, depth + 1)));
   };
   S.notesOf('planet').forEach((p) => ap(wrap, node(p, 0)));
@@ -182,18 +182,18 @@ async function renderHome(state) {
   const hero = h('div', { class: 'hd-hero' + (bnSrc ? ' is-' + bStyle : ' is-empty'), style: bnSrc ? { '--img': `url("${bnSrc}")`, '--y': bY + '%' } : { '--cd-hue': String(hashHue(nv.title || 'x')) } }, h('div', { class: 'bg' }), tools,
     h('div', {}, nv.series ? h('div', { class: 'hd-series' }, nv.series) : null, h('h1', {}, nv.title || 'Untitled novel'),
       h('div', { class: 'sub' }, h('span', { class: 'cs-badge' }, nv.stage || 'Drafting'), dl ? h('span', {}, `Due ${dl.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`) : h('span', {}, 'No deadline set'), daysLeft != null ? h('span', {}, '·') : null, daysLeft != null ? h('span', {}, `${daysLeft} days left`) : null)),
-    h('div', { class: 'hd-side' }, h('div', { class: 'ring', style: { '--p': String(pct) } }, h('div', {}, h('b', {}, pct + '%'), h('small', {}, 'of goal'))), enc));
+    h('div', { class: 'hd-side' }, h('div', { class: 'wk-ring', style: { '--p': String(pct) } }, h('div', {}, h('b', {}, pct + '%'), h('small', {}, 'of goal'))), enc));
   dropImages(hero, null, ([img]) => setBanner(img));
   ap(root, hero);
 
   /* KPIs */
   const avg = Math.round(activity.reduce((a, b) => a + b, 0) / activity.length);
-  ap(root, h('div', { class: 'kpis' },
-    h('div', { class: 'kpi' }, h('span', {}, 'Words'), h('b', {}, fmtN(words)), h('small', {}, `of ${fmtN(goal)} · ${usePW ? 'from Plot Weaver' : 'manual'}`)),
-    h('div', { class: 'kpi' }, h('span', {}, 'Remaining'), h('b', {}, fmtN(remain)), h('small', {}, `${100 - pct}% to go`)),
-    h('div', { class: 'kpi' }, h('span', {}, 'Needed per day'), h('b', {}, daysLeft ? fmtN(Math.ceil(remain / Math.max(1, daysLeft))) : '—'), h('small', {}, dl ? 'to hit your deadline' : 'set a deadline in settings')),
-    h('div', { class: 'kpi' }, h('span', {}, 'Today'), h('b', {}, fmtN(activity[activity.length - 1])), h('small', {}, `avg ${fmtN(avg)}/day (14d)`)),
-    h('div', { class: 'kpi' }, h('span', {}, 'Streak'), h('b', {}, streak + ' days'), h('small', {}, 'days with new words'))));
+  ap(root, h('div', { class: 'wk-kpis' },
+    h('div', { class: 'wk-kpi' }, h('span', {}, 'Words'), h('b', {}, fmtN(words)), h('small', {}, `of ${fmtN(goal)} · ${usePW ? 'from Plot Weaver' : 'manual'}`)),
+    h('div', { class: 'wk-kpi' }, h('span', {}, 'Remaining'), h('b', {}, fmtN(remain)), h('small', {}, `${100 - pct}% to go`)),
+    h('div', { class: 'wk-kpi' }, h('span', {}, 'Needed per day'), h('b', {}, daysLeft ? fmtN(Math.ceil(remain / Math.max(1, daysLeft))) : '—'), h('small', {}, dl ? 'to hit your deadline' : 'set a deadline in settings')),
+    h('div', { class: 'wk-kpi' }, h('span', {}, 'Today'), h('b', {}, fmtN(activity[activity.length - 1])), h('small', {}, `avg ${fmtN(avg)}/day (14d)`)),
+    h('div', { class: 'wk-kpi' }, h('span', {}, 'Streak'), h('b', {}, streak + ' days'), h('small', {}, 'days with new words'))));
 
   /* atlas pills */
   ap(root, h('div', { class: 'atlas-pills' }, ...Object.keys(T()).sort((a, b) => (TYPE_ORDER.indexOf(a) + 1 || 99) - (TYPE_ORDER.indexOf(b) + 1 || 99)).map((t) => h('button', { class: 'apill', onclick: () => P.openDashboards(t) }, h('span', {}, T()[t].icon), T()[t].plural, h('b', {}, String(S.notesOf(t).length))))));
@@ -204,13 +204,13 @@ async function renderHome(state) {
   ap(colL, renderSummary(state)); ap(colR, await renderTodos(state));
 
   /* plot weaver + activity */
-  const pwCard = h('div', { class: 'card' });
+  const pwCard = h('div', { class: 'wk-card' });
   if (usePW) {
     const tot = Math.max(1, pw.scenes);
     const novelSel = h('select', { class: 'dropdown wk-sm' }, ...pwx.data.novels.map((n) => h('option', { value: n.title, selected: novelPW && n.id === novelPW.id }, n.title)));
     novelSel.addEventListener('change', async () => { pwc.novel = novelSel.value; await P.saveSettings(); });
     const openBoard = () => { if (!app().commands?.executeCommandById?.(`${PW_ID}:open-board`)) toast('Enable Plot Weaver to open its board'); };
-    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill ' + (pwx.enabled ? 'ok' : 'warn') }, (pwx.enabled ? 'connected' : 'saved data · plugin disabled') + (pwx.version ? ' · v' + pwx.version : '')), h('span', { class: 'sp' }), pwx.data.novels.length > 1 ? novelSel : null,
+    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'wk-pill ' + (pwx.enabled ? 'ok' : 'warn') }, (pwx.enabled ? 'connected' : 'saved data · plugin disabled') + (pwx.version ? ' · v' + pwx.version : '')), h('span', { class: 'sp' }), pwx.data.novels.length > 1 ? novelSel : null,
       h('button', { class: 'wk-sm', onclick: openBoard }, 'Open board ↗')),
     pw.scenes ? [
       h('div', { class: 'pw-status' }, ...pw.buckets.map((x) => h('i', { style: { width: (x.count / tot) * 100 + '%', background: x.color }, title: `${x.label}: ${x.count} scenes` }))),
@@ -220,13 +220,13 @@ async function renderHome(state) {
     h('div', { class: 'cs-hint cs-mt' }, `Read from Plot Weaver’s cards. Status and words come from each card’s linked note, using Plot Weaver’s fields: “${pwx.settings.statusField}” and “${pwx.settings.wordsField}”.`));
   } else {
     const manual = h('input', { type: 'number', value: nv.manualWords || 0, class: 'wk-num' }); manual.addEventListener('change', async () => { nv.manualWords = +manual.value; await P.saveSettings(); });
-    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill warn' }, !pwx.installed ? 'not installed' : !pwc.enabled ? 'turned off in settings' : 'no outline saved yet')),
+    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'wk-pill warn' }, !pwx.installed ? 'not installed' : !pwc.enabled ? 'turned off in settings' : 'no outline saved yet')),
       h('p', { class: 'cs-hint' }, !pwx.installed ? 'Install Plot Weaver to pull chapter, scene and POV stats in here. Until then, track words by hand:' : !pwc.enabled ? 'Turn on the integration in Worldkeeper settings → Novel & Plot Weaver.' : 'Open Plot Weaver and add some cards; stats appear here once it has saved an outline. Meanwhile, track words by hand:'),
       h('div', { class: 'wk-row' }, manual, h('span', { class: 'cs-hint' }, 'words written')));
   }
   const max = Math.max(1, ...activity);
-  const actCard = h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '✍️ Writing activity'), h('span', { class: 'sp' }), h('span', { class: 'pill' }, 'last 14 days')),
-    h('div', { class: 'act' }, ...activity.map((v, i) => h('div', { style: { height: Math.max(2, (v / max) * 100) + '%', opacity: v ? '.85' : '.25' } }, h('span', {}, `${days[i].toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${fmtN(v)}`)))),
+  const actCard = h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '✍️ Writing activity'), h('span', { class: 'sp' }), h('span', { class: 'wk-pill' }, 'last 14 days')),
+    h('div', { class: 'wk-act' }, ...activity.map((v, i) => h('div', { style: { height: Math.max(2, (v / max) * 100) + '%', opacity: v ? '.85' : '.25' } }, h('span', {}, `${days[i].toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${fmtN(v)}`)))),
     h('div', { class: 'act-x' }, ...days.map((d, i) => h('span', {}, i % 2 ? '' : String(d.getDate())))),
     h('div', { class: 'cs-hint cs-mt' }, 'Worldkeeper saves your total word count once a day to draw this.'),
     groupTitle('🧭 Needs attention'), h('ul', { class: 'att' }, ...attention().slice(0, 7).map(([n, why]) => { const a = h('a', { class: 'wk-link' }, n.basename); a.addEventListener('click', (e) => openFile(n, e)); return h('li', {}, h('span', {}, typeIcon(n)), a, h('span', { class: 'why' }, why)); })),
@@ -234,13 +234,13 @@ async function renderHome(state) {
   ap(colL, pwCard); ap(colR, actCard);
 
   /* tree + shared */
-  ap(colL, h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '🗺️ World tree'), h('span', { class: 'sp' }), h('span', { class: 'cs-hint' }, 'Planet › Continent › Kingdom › Place › Hub')), worldTree()));
-  ap(colR, h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '🌐 Shared across the world')), ...[...CROSS, ...DIVINE].map((t) => h('div', { class: 'cs-mb' }, groupTitle(`${T()[t].icon} ${T()[t].plural}`, S.notesOf(t).length),
+  ap(colL, h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '🗺️ World tree'), h('span', { class: 'sp' }), h('span', { class: 'cs-hint' }, 'Planet › Continent › Kingdom › Place › Hub')), worldTree()));
+  ap(colR, h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '🌐 Shared across the world')), ...[...CROSS, ...DIVINE].map((t) => h('div', { class: 'cs-mb' }, groupTitle(`${T()[t].icon} ${T()[t].plural}`, S.notesOf(t).length),
       h('div', { class: 'cs-tile-body' }, ...S.notesOf(t).map((n) => chip(n.path, '', { file: n, label: n.basename })))))));
   return root;
 }
 function renderSummary(state) {
-  const nv = ST().novel; const card = h('div', { class: 'card sm-card' });
+  const nv = ST().novel; const card = h('div', { class: 'wk-card sm-card' });
   ap(card, h('div', { class: 'card-h' }, h('h3', {}, '📘 About the book'), h('span', { class: 'sp' }), h('button', { class: 'wk-sm', onclick: () => { state.summaryEdit = !state.summaryEdit; state.rerender(); } }, state.summaryEdit ? '✓ Done' : '✎ Edit')));
   if (state.summaryEdit) {
     const f = (label, el) => h('div', { class: 'cl-row' }, h('label', {}, label), el);
@@ -252,7 +252,7 @@ function renderSummary(state) {
   }
   const tags = [...arr(nv.genre), nv.pov, nv.audience].filter(Boolean);
   if (!nv.logline && !nv.synopsis) { ap(card, empty('Add a logline and summary of your book. Click Edit.')); return card; }
-  ap(card, tags.length ? h('div', { class: 'sm-tags' }, ...tags.map((g) => h('span', { class: 'pill' }, g))) : null, nv.logline ? h('blockquote', { class: 'sm-log' }, nv.logline) : null,
+  ap(card, tags.length ? h('div', { class: 'sm-tags' }, ...tags.map((g) => h('span', { class: 'wk-pill' }, g))) : null, nv.logline ? h('blockquote', { class: 'sm-log' }, nv.logline) : null,
     ...String(nv.synopsis || '').split(/\n\n+/).filter(Boolean).map((p) => h('p', { class: 'sm-p' }, ...linkify(p))), h('div', { class: 'cs-hint' }, 'Names of notes in your world are linked automatically.'));
   return card;
 }
@@ -316,8 +316,8 @@ async function renderTodos(state) {
   const save = async () => { await writeTodos(list); state.rerender(); };
   const all = [...list.map((t) => ({ ...t, own: t })), ...noteTasks];
   const open = all.filter((t) => !t.done), done = all.filter((t) => t.done); const overdue = open.filter((t) => t.due && t.due < today).length;
-  const card = h('div', { class: 'card td-card' });
-  ap(card, h('div', { class: 'card-h' }, h('h3', {}, '☑️ To-do'), h('span', { class: 'pill' }, `${open.length} open`), overdue ? h('span', { class: 'pill warn' }, `${overdue} overdue`) : null, h('span', { class: 'sp' }),
+  const card = h('div', { class: 'wk-card td-card' });
+  ap(card, h('div', { class: 'card-h' }, h('h3', {}, '☑️ To-do'), h('span', { class: 'wk-pill' }, `${open.length} open`), overdue ? h('span', { class: 'wk-pill warn' }, `${overdue} overdue`) : null, h('span', { class: 'sp' }),
     h('button', { class: 'wk-sm', title: 'Turn Needs attention items into tasks', onclick: async () => { const have = new Set(list.map((t) => t.text)); let k = 0; for (const [n, why] of attention().slice(0, 5)) { const text = `[[${n.basename}]]: ${why}`; if (!have.has(text)) { list.push({ done: false, text, due: '', tag: 'Worldbuilding' }); k++; } } toast(k ? `Added ${k} tasks` : 'Nothing new to add'); if (k) await save(); } }, '+ From Needs attention')));
   const inp = h('input', { type: 'text', class: 'td-in', placeholder: 'Add a task… type [[ to link a note' });
   const tag = h('select', { class: 'dropdown' }, ...s.todoTags.map((t) => h('option', {}, t))); const due = h('input', { type: 'date' });
@@ -339,7 +339,7 @@ async function renderTodos(state) {
     txt.addEventListener('dblclick', () => { const ed = h('input', { type: 'text', value: t.text, class: 'td-edit' }); ed.addEventListener('keydown', (e) => { if (e.key === 'Enter') ed.blur(); }); ed.addEventListener('blur', async () => { const v = ed.value.trim() || t.text; if (own) { own.text = v; await save(); } else { await setNoteTask(t, { text: v }); setTimeout(() => state.rerender(), 120); } }); txt.replaceWith(ed); ed.focus(); });
     const srcChip = own ? null : (() => { const c = h('span', { class: 'td-src', title: `${t.file.path}, line ${t.line + 1}` }, typeIcon(t.file) + ' ' + t.file.basename); c.addEventListener('click', (e) => app().workspace.getLeaf(Keymap.isModEvent(e) ? 'tab' : false).openFile(t.file, { eState: { line: t.line } })); hover(c, t.file.path, '', c); return c; })();
     const li = h('li', { class: 'td-item' + (t.done ? ' is-done' : '') + (own ? '' : ' is-note'), draggable: own ? 'true' : 'false' }, h('span', { class: 'td-grip', title: own ? 'Drag to reorder' : '' }, own ? '⋮⋮' : ''), cb, txt,
-      h('span', { class: 'td-meta' }, srcChip, t.due ? h('span', { class: 'td-due' + (over ? ' is-over' : '') }, (over ? '⚠ ' : '📅 ') + new Date(t.due + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })) : null, t.tag ? h('span', { class: 'pill' }, t.tag) : null,
+      h('span', { class: 'td-meta' }, srcChip, t.due ? h('span', { class: 'td-due' + (over ? ' is-over' : '') }, (over ? '⚠ ' : '📅 ') + new Date(t.due + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })) : null, t.tag ? h('span', { class: 'wk-pill' }, t.tag) : null,
         own ? h('span', { class: 'cs-x', title: 'Delete', onclick: async () => { list.splice(list.indexOf(own), 1); await save(); } }, '✕') : null));
     if (own) {
       li.addEventListener('dragstart', () => { drag = own; li.classList.add('is-dragging'); }); li.addEventListener('dragend', () => li.classList.remove('is-dragging'));

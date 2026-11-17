@@ -135,7 +135,7 @@ function renderScenes(f, pw) {
     const col = c.meta && c.meta.def ? c.meta.def.color : '#666';
     ap(tb, h('tr', {}, h('td', {}, title, pw.data.novels.length > 1 ? h('div', { class: 'cs-hint' }, c.n.title) : null), h('td', {}, c.chapter ? c.chapter.title : '—'),
       h('td', {}, c.plotline ? h('span', { class: 'pw-dot', style: { background: c.plotline.color || '#888' } }) : null, c.plotline ? c.plotline.name : '—'), h('td', {}, c.pov ? c.pov.name : '—'),
-      h('td', {}, h('span', { class: 'pill', style: { color: col } }, st)), h('td', {}, c.meta && c.meta.words != null ? fmtN(c.meta.words) : '—'), h('td', { class: 'cs-hint' }, c.why.join(', '))));
+      h('td', {}, h('span', { class: 'wk-pill', style: { color: col } }, st)), h('td', {}, c.meta && c.meta.words != null ? fmtN(c.meta.words) : '—'), h('td', { class: 'cs-hint' }, c.why.join(', '))));
   }
   return h('div', {}, h('div', { class: 'cs-hint cs-mb' }, 'Cards from Plot Weaver where this is the POV character, or whose scene note links here.'), ap(t, tb));
 }
