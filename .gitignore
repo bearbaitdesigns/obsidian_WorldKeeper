@@ -1,0 +1,5 @@
+# built by scripts/build.mjs and attached to releases by the Release action
+main.js
+node_modules/
+.DS_Store
+data.json

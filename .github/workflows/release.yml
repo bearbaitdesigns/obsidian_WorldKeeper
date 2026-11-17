@@ -1,0 +1,57 @@
+name: Release
+
+# Push a tag that matches manifest.json's version (e.g. 0.1.1) to publish a release
+# with the three files Obsidian and BRAT need: main.js, manifest.json, styles.css.
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (must match manifest.json version)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Work out the tag
+        id: tag
+        run: echo "tag=${{ github.event.inputs.tag || github.ref_name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Check the tag matches manifest.json
+        run: |
+          version=$(node -p "require('./manifest.json').version")
+          if [ "$version" != "${{ steps.tag.outputs.tag }}" ]; then
+            echo "::error::Tag ${{ steps.tag.outputs.tag }} does not match manifest.json version $version"
+            exit 1
+          fi
+
+      - name: Build main.js
+        run: node scripts/build.mjs
+
+      - name: Syntax check
+        run: node --check main.js
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ steps.tag.outputs.tag }}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" main.js manifest.json styles.css --clobber
+          else
+            gh release create "$tag" main.js manifest.json styles.css \
+              --title "Worldkeeper $tag" \
+              --generate-notes
+          fi
