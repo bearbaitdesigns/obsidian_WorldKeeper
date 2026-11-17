@@ -199,8 +199,9 @@ async function renderHome(state) {
   ap(root, h('div', { class: 'atlas-pills' }, ...Object.keys(T()).sort((a, b) => (TYPE_ORDER.indexOf(a) + 1 || 99) - (TYPE_ORDER.indexOf(b) + 1 || 99)).map((t) => h('button', { class: 'apill', onclick: () => P.openDashboards(t) }, h('span', {}, T()[t].icon), T()[t].plural, h('b', {}, String(S.notesOf(t).length))))));
 
   /* summary + todo */
-  const grid = h('div', { class: 'hd-masonry' }); ap(root, grid); const colL = grid, colR = grid;
-  ap(grid, renderSummary(state), await renderTodos(state));
+  const colL = h('div', { class: 'hd-col' }), colR = h('div', { class: 'hd-col' });
+  ap(root, h('div', { class: 'hd-twocol' }, colL, colR));
+  ap(colL, renderSummary(state)); ap(colR, await renderTodos(state));
 
   /* plot weaver + activity */
   const pwCard = h('div', { class: 'card' });

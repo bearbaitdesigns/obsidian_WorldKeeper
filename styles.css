@@ -1130,3 +1130,8 @@
 .wk .td-meta {flex-wrap: wrap; justify-content: flex-end; min-width: 0;}
 .wk .td-text {overflow-wrap: anywhere;}
 .wk .tree summary .c {white-space: nowrap;}
+/* 0.1.4: fixed card order — left: About, Plot Weaver, World tree · right: To-do, Activity, Shared */
+.wk .hd-twocol {display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; align-items: start; margin-bottom: 12px;}
+.wk .hd-twocol > .hd-col {display: flex; flex-direction: column; gap: 12px; min-width: 0;}
+.wk .hd-twocol .card {min-width: 0; overflow: hidden;}
+@media (max-width: 760px) {.wk .hd-twocol {grid-template-columns: minmax(0, 1fr);}}
