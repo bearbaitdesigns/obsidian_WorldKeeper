@@ -239,12 +239,17 @@ async function renderTextTab(panel, f, heading, comp) {
     let t = null; let saved = text;
     const flush = async () => { clearTimeout(t); if (ta.value !== saved) { saved = ta.value; await writeTab(f, heading, ta.value); } };
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(180, ta.scrollHeight + 4) + 'px'; };
-    const done = async () => { await flush(); st.editing = false; ta.blur(); P.refreshSoon(0); };
+    let closing = false;
+    const done = async () => { if (closing) return; closing = true; st.editing = false; await flush(); ta.blur(); P.refreshSoon(0); };
     ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(flush, 900); grow(); });
-    ta.addEventListener('blur', () => flush());
+    ta.addEventListener('blur', (e) => { if (e.relatedTarget && e.relatedTarget.classList && e.relatedTarget.classList.contains('wk-done')) return; flush(); });
     ta.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(); } });
     ta.addEventListener('input', () => { const pos = ta.selectionStart; if (ta.value.slice(0, pos).endsWith('[[')) suggest({ items: S.files().filter((x) => S.managed(x) || S.isEntry(x)).sort(byName).map((x) => ({ label: x.basename, sub: typeLabel(x), value: x.basename })), placeholder: 'Link a note…', onPick: (n) => { ta.value = ta.value.slice(0, pos) + n + ']]' + ta.value.slice(pos); ta.focus(); ta.setSelectionRange(pos + n.length + 2, pos + n.length + 2); flush(); } }); });
-    ap(panel, h('div', { class: 'cs-section-actions' }, h('span', { class: 'cs-hint' }, 'Saves as you type · Esc to finish'), h('button', { class: 'mod-cta', onclick: done }, '✓ Done')), ta);
+    const doneBtn = h('button', { class: 'mod-cta wk-done' }, '✓ Done');
+    // act on mousedown and keep focus in the text box, so the save can't redraw the tab before the click lands
+    doneBtn.addEventListener('mousedown', (e) => { e.preventDefault(); done(); });
+    doneBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); done(); } });
+    ap(panel, h('div', { class: 'cs-section-actions' }, h('span', { class: 'cs-hint' }, 'Saves as you type · Esc to finish'), doneBtn), ta);
     setTimeout(() => { grow(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 20);
     return;
   }

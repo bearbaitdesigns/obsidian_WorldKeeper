@@ -1151,3 +1151,6 @@
 /* text-tab blocks live in the note body but are shown only inside their sheet tab (intentionally unscoped) */
 .callout[data-callout="wk-tab"] {display: none !important;}
 .markdown-source-view.mod-cm6 .cm-embed-block:has(> .callout[data-callout="wk-tab"]) {display: none !important;}
+/* 0.1.7: text tabs use the full width of the sheet */
+.wk .cs-panel .cs-section-md {max-width: none !important; width: 100%;}
+.wk .cs-panel .cs-text-edit {display: block; width: 100% !important; max-width: none !important; min-width: 0; box-sizing: border-box; field-sizing: fixed;}
