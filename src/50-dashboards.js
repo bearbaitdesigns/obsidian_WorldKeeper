@@ -228,9 +228,7 @@ async function renderHome(state) {
   const actCard = h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '✍️ Writing activity'), h('span', { class: 'sp' }), h('span', { class: 'wk-pill' }, 'last 14 days')),
     h('div', { class: 'wk-act' }, ...activity.map((v, i) => h('div', { style: { height: Math.max(2, (v / max) * 100) + '%', opacity: v ? '.85' : '.25' } }, h('span', {}, `${days[i].toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}: ${fmtN(v)}`)))),
     h('div', { class: 'act-x' }, ...days.map((d, i) => h('span', {}, i % 2 ? '' : String(d.getDate())))),
-    h('div', { class: 'cs-hint cs-mt' }, 'Worldkeeper saves your total word count once a day to draw this.'),
-    groupTitle('🧭 Needs attention'), h('ul', { class: 'att' }, ...attention().slice(0, 7).map(([n, why]) => { const a = h('a', { class: 'wk-link' }, n.basename); a.addEventListener('click', (e) => openFile(n, e)); return h('li', {}, h('span', {}, typeIcon(n)), a, h('span', { class: 'why' }, why)); })),
-    groupTitle('🕑 Recently edited'), h('ul', { class: 'att' }, ...[...S.ix().type.keys()].map((p) => app().vault.getAbstractFileByPath(p)).filter(Boolean).sort((a, b) => b.stat.mtime - a.stat.mtime).slice(0, 6).map((n) => { const a = h('a', { class: 'wk-link' }, n.basename); a.addEventListener('click', (e) => openFile(n, e)); return h('li', {}, h('span', {}, typeIcon(n)), a, h('span', { class: 'why' }, new Date(n.stat.mtime).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))); })));
+    h('div', { class: 'cs-hint cs-mt' }, 'Worldkeeper saves your total word count once a day to draw this.'));
   ap(colL, pwCard); ap(colR, actCard);
 
   /* tree + shared */
@@ -239,20 +237,33 @@ async function renderHome(state) {
       h('div', { class: 'cs-tile-body' }, ...S.notesOf(t).map((n) => chip(n.path, '', { file: n, label: n.basename })))))));
   return root;
 }
+/** the book cover: click to upload or choose, drop an image on it, ✕ to remove */
+function renderCover() {
+  const nv = ST().novel; const src = S.imageSrc(nv.cover, '');
+  const setCover = async (img) => { nv.cover = S.link(img); await P.saveSettings(); };
+  const box = h('div', { class: 'sm-cover' + (src ? '' : ' is-empty'), title: src ? 'Change cover' : 'Add a cover' },
+    src ? h('img', { src, alt: `${nv.title || 'Book'} cover` }) : [h('span', { class: 'sm-cover-plus' }, '＋'), h('span', {}, 'Add cover')],
+    src ? h('span', { class: 'cs-avatar-x', title: 'Remove cover', onclick: async (e) => { e.stopPropagation(); nv.cover = ''; await P.saveSettings(); } }, '✕') : null);
+  box.addEventListener('click', async (e) => { const [img] = await chooseImages(e, null); if (img) setCover(img); });
+  dropImages(box, null, ([img]) => setCover(img));
+  return box;
+}
 function renderSummary(state) {
   const nv = ST().novel; const card = h('div', { class: 'wk-card sm-card' });
   ap(card, h('div', { class: 'card-h' }, h('h3', {}, '📘 About the book'), h('span', { class: 'sp' }), h('button', { class: 'wk-sm', onclick: () => { state.summaryEdit = !state.summaryEdit; state.rerender(); } }, state.summaryEdit ? '✓ Done' : '✎ Edit')));
+  const main = h('div', { class: 'sm-main' });
+  ap(card, h('div', { class: 'sm-wrap' }, renderCover(), main));
   if (state.summaryEdit) {
     const f = (label, el) => h('div', { class: 'cl-row' }, h('label', {}, label), el);
     const ta = (k, rows) => { const e = h('textarea', { class: 'sm-in', rows }, nv[k] || ''); e.addEventListener('change', () => { nv[k] = e.value; P.saveSettingsQuiet(); }); return e; };
     const ti = (k, v) => { const e = h('input', { type: 'text', value: v }); e.addEventListener('change', () => { nv[k] = k === 'genre' ? e.value.split(',').map((x) => x.trim()).filter(Boolean) : e.value; P.saveSettingsQuiet(); }); return e; };
-    ap(card, f('Logline (one sentence)', ta('logline', 2)), f('Summary', ta('synopsis', 9)),
+    ap(main, f('Logline (one sentence)', ta('logline', 2)), f('Summary', ta('synopsis', 9)),
       h('div', { class: 'wk-row wk-wrap' }, f('Genre (comma-separated)', ti('genre', arr(nv.genre).join(', '))), f('POV', ti('pov', nv.pov || '')), f('Audience', ti('audience', nv.audience || ''))));
     return card;
   }
   const tags = [...arr(nv.genre), nv.pov, nv.audience].filter(Boolean);
-  if (!nv.logline && !nv.synopsis) { ap(card, empty('Add a logline and summary of your book. Click Edit.')); return card; }
-  ap(card, tags.length ? h('div', { class: 'sm-tags' }, ...tags.map((g) => h('span', { class: 'wk-pill' }, g))) : null, nv.logline ? h('blockquote', { class: 'sm-log' }, nv.logline) : null,
+  if (!nv.logline && !nv.synopsis) { ap(main, empty('Add a logline and summary of your book. Click Edit.')); return card; }
+  ap(main, tags.length ? h('div', { class: 'sm-tags' }, ...tags.map((g) => h('span', { class: 'wk-pill' }, g))) : null, nv.logline ? h('blockquote', { class: 'sm-log' }, nv.logline) : null,
     ...String(nv.synopsis || '').split(/\n\n+/).filter(Boolean).map((p) => h('p', { class: 'sm-p' }, ...linkify(p))), h('div', { class: 'cs-hint' }, 'Names of notes in your world are linked automatically.'));
   return card;
 }

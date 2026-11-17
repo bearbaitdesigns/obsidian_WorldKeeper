@@ -86,7 +86,7 @@ Every field, list, label, icon, tab and tab order can be changed in **Settings �
 
 ### Dashboards
 
-- **Home** (🌍): a novel banner with a goal ring (upload, drag in, set focus, clear or blurred, like any note banner), word-count stats, the book's logline and summary, a to-do list, Plot Weaver stats, a writing-activity chart, a *Needs attention* list, recently edited notes, a world tree, and pills that open each type's dashboard.
+- **Home** (🌍): a novel banner with a goal ring (upload, drag in, set focus, clear or blurred, like any note banner), word-count stats, the book's cover, logline and summary, a to-do list (its **+ From Needs attention** button turns gaps in your world into tasks), Plot Weaver stats, a writing-activity chart, a world tree, and pills that open each type's dashboard.
 - **Dashboards** (▦): one dashboard per type, shown as cards or a table, with search, filters, an "anywhere in [region]" filter and sorting.
 - **Encyclopedia** (📚): worldbuilding entries sorted into categories. Each entry has tags, linked elements, See also, and related entries worked out from shared links. Linked notes show the entry under their **Linked here** tab.
 

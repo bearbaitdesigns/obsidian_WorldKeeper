@@ -1154,3 +1154,14 @@
 /* 0.1.7: text tabs use the full width of the sheet */
 .wk .cs-panel .cs-section-md {max-width: none !important; width: 100%;}
 .wk .cs-panel .cs-text-edit {display: block; width: 100% !important; max-width: none !important; min-width: 0; box-sizing: border-box; field-sizing: fixed;}
+/* 0.1.8: book cover in About the book */
+.wk .sm-wrap {display: flex; gap: 14px; align-items: flex-start;}
+.wk .sm-main {flex: 1; min-width: 0;}
+.wk .sm-cover {position: relative; flex: 0 0 112px; width: 112px; aspect-ratio: 2 / 3; border-radius: 6px; overflow: hidden; cursor: pointer; background: var(--background-primary); box-shadow: 0 6px 18px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.06);}
+.wk .sm-cover img {width: 100%; height: 100%; object-fit: cover; display: block;}
+.wk .sm-cover.is-empty {display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1px dashed var(--text-faint); box-shadow: none; color: var(--text-muted); font-size: .78em; background: transparent;}
+.wk .sm-cover.is-empty:hover, .wk .sm-cover.is-drop {border-color: var(--cs-accent); color: var(--cs-accent);}
+.wk .sm-cover-plus {font-size: 22px; line-height: 1;}
+.wk .sm-cover:hover .cs-avatar-x {display: grid;}
+.wk .sm-cover .cs-avatar-x {position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: 10px; display: none; place-items: center;}
+@media (max-width: 520px) {.wk .sm-wrap {flex-direction: column;} .wk .sm-cover {width: 96px; flex-basis: auto;}}
