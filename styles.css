@@ -1165,3 +1165,14 @@
 .wk .sm-cover:hover .cs-avatar-x {display: grid;}
 .wk .sm-cover .cs-avatar-x {position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; font-size: 10px; display: none; place-items: center;}
 @media (max-width: 520px) {.wk .sm-wrap {flex-direction: column;} .wk .sm-cover {width: 96px; flex-basis: auto;}}
+/* 2/3-size dashboard cards */
+.wk .cd-grid {grid-template-columns: repeat(auto-fill, minmax(127px, 1fr)); gap: 11px;}
+.wk .cd-card {border-radius: 10px;}
+.wk .cd-card:hover {transform: translateY(-2px);}
+.wk .cd-init {font-size: 31px;}
+.wk .cd-img .cd-init.is-icon {font-size: 36px;}
+.wk .cd-role {top: 7px; left: 7px; padding: 1px 6px; font-size: 0.56em;}
+.wk .cd-name {left: 8px; right: 8px; bottom: 7px; font-size: 0.86em;}
+.wk .cd-body {padding: 6px 8px 8px; gap: 2px;}
+.wk .cd-meta, .wk .cd-loc {font-size: 0.7em;}
+.wk .cd-card .cd-stat {font-size: 0.66em;}

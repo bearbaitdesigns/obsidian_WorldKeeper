@@ -40,12 +40,12 @@ function renderTypeDash(id, st, { compact = false } = {}) {
   ap(root, fb);
   if (!list.length) { ap(root, empty(all.length ? 'Nothing matches these filters.' : `No ${t.plural.toLowerCase()} yet. Create one, or convert existing notes.`)); return root; }
   const stat = (f) => {
-    if (GEO.includes(id) && id !== 'hub') { const d = S.descendants(f); const ps = new Set([f.path, ...d.map((x) => x.path)]); const ch = S.notesOf('character').filter((c) => S.linkFiles(c, 'location').some((l) => ps.has(l.path))); return `${d.length} inside · ${ch.length} characters`; }
-    if (id === 'pantheon') return `${arr(S.fm(f).gods).length} gods · ${worshipOf(f).length} followers`;
+    if (GEO.includes(id) && id !== 'hub') { const d = S.descendants(f); const ps = new Set([f.path, ...d.map((x) => x.path)]); const ch = S.notesOf('character').filter((c) => S.linkFiles(c, 'location').some((l) => ps.has(l.path))); return `${d.length} inside · ${ch.length} character${ch.length === 1 ? '' : 's'}`; }
+    if (id === 'pantheon') { const g = arr(S.fm(f).gods).length, w = worshipOf(f).length; return `${g} god${g === 1 ? '' : 's'} · ${w} follower${w === 1 ? '' : 's'}`; }
     if (id === 'demon') { const k = S.refsOf(f, { from: 'character', via: 'species' }).length; return `${k} demon${k === 1 ? '' : 's'}`; }
     const m = t.modules.find((x) => typeof x === 'object' && x.ref); if (m) return `${S.refsOf(f, m).length} ${m.ref.toLowerCase()}`;
-    if (id === 'character') return arr(S.fm(f)[s.relationshipKey]).length + ' relationships';
-    return S.backlinks(f).length + ' links here';
+    if (id === 'character') { const k = arr(S.fm(f)[s.relationshipKey]).length; return `${k} relationship${k === 1 ? '' : 's'}`; }
+    { const k = S.backlinks(f).length; return `${k} link${k === 1 ? '' : 's'} here`; }
   };
   const sub = (f) => { if (GEO.includes(id)) return S.ancestors(f).map((a) => a.basename).join(' › ') || '—'; if (hdr) return names(S.fm(f)[hdr.key]).map(display).join(', ') || '—'; return ''; };
   const meta = (f) => { const fm = S.fm(f); return [...t.domain.filter((d) => !d.when).slice(1, 3).map((d) => arr(fm[d.key]).join(', ')), ...t.links.filter((l) => l.placement === 'tile').slice(0, 1).map((l) => display(names(fm[l.key])[0] || ''))].filter(Boolean).join(' · '); };
