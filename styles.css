@@ -1094,3 +1094,27 @@
 .wk .hd-hero.is-drop {outline: 3px dashed var(--cs-accent); outline-offset: -6px;}
 .wk .pw-dot {display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px;}
 .wk .pw-scenes td {vertical-align: top; padding: 6px 8px;}
+
+/* =================== 0.1.2: banner pencil, tighter home, note tasks =================== */
+.wk .cs-banner-tools > :not(.wk-pencil) {display: none;}
+.wk .cs-banner-tools.is-open > :not(.wk-pencil) {display: inline-flex;}
+.wk .cs-banner-tools {opacity: 1;}
+.wk .hd-hero .cs-banner-tools {opacity: 1;}
+.wk .wk-pencil {width: 30px; height: 30px; padding: 0 !important; border-radius: 50% !important; display: grid; place-items: center; font-size: 14px; background: rgba(0,0,0,.5) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.25) !important; backdrop-filter: blur(6px); opacity: .55; transition: opacity .15s;}
+.wk .cs-hero:hover .wk-pencil, .wk .hd-hero:hover .wk-pencil, .wk .cs-banner-tools.is-open .wk-pencil {opacity: 1;}
+.wk .cs-banner-tools.is-open .wk-pencil {background: var(--cs-accent) !important; border-color: transparent !important;}
+.wk .hd-cols {gap: 12px; margin-bottom: 12px; align-items: start;}
+.wk .kpis {margin: 12px 0;}
+.wk .atlas-pills {margin-bottom: 12px;}
+.wk .card {padding: 12px 14px;}
+.wk .card-h {margin-bottom: 10px; min-height: 0;}
+.wk .card-h h3 {margin: 0; line-height: 1.3;}
+.wk .card p, .wk .card ul {margin-top: 0;}
+.wk .sm-p {margin: 0 0 8px;}
+.wk .sm-p:last-of-type {margin-bottom: 4px;}
+.wk .td-item.is-note .td-text {color: var(--text-normal);}
+.wk .td-src {font-size: .72em; padding: 1px 8px; border-radius: 999px; background: var(--background-modifier-hover); color: var(--text-muted); cursor: pointer; white-space: nowrap; max-width: 160px; overflow: hidden; text-overflow: ellipsis;}
+.wk .td-src:hover {color: var(--link-color);}
+.wk .hd-masonry {display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px; align-items: start; margin-bottom: 12px;}
+.wk .hd-col {display: flex; flex-direction: column; gap: 12px; min-width: 0;}
+@media (max-width: 900px) {.wk .hd-masonry {grid-template-columns: 1fr;}}

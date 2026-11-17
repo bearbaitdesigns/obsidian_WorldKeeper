@@ -55,7 +55,7 @@ async function renderSheet(f, id, comp) {
     ap(row, h('button', { class: 'cs-add', title: single ? 'Change' : 'Add ' + lf.label, onclick: () => openLinkPicker(f, lf) }, single ? '⇄' : '+'));
     ap(main, row);
   }
-  const tools = h('div', { class: 'cs-banner-tools' });
+  const tools = h('div', { class: 'cs-banner-tools', 'data-key': f.path }, pencilToggle());
   const bannerBtn = h('button', {}, bannerSrc ? '🖼 Change banner' : '🖼 Add banner');
   bannerBtn.addEventListener('click', async (e) => {
     const gal = names(fm[s.galleryKey]);

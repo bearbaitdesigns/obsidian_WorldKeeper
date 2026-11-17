@@ -123,6 +123,16 @@ function dropImages(el, src, cb) {
   el.addEventListener('drop', async (e) => { el.classList.remove('is-drop'); if (e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); e.stopPropagation(); const fs = await importFiles(e.dataTransfer.files, src); if (fs.length) cb(fs); } });
 }
 
+/* ---------- banner edit toggle ---------- */
+const openTools = new Set();
+/** pencil button that reveals the rest of a banner's tools; remembers state per banner */
+function pencilToggle(key) {
+  const b = h('button', { class: 'wk-pencil', title: 'Edit banner', 'aria-label': 'Edit banner' }, '✎');
+  b.addEventListener('click', (e) => { e.stopPropagation(); const box = b.parentElement; const on = !box.classList.contains('is-open'); box.classList.toggle('is-open', on); const k = box.dataset.key; if (k) on ? openTools.add(k) : openTools.delete(k); });
+  setTimeout(() => { const box = b.parentElement; if (box && box.dataset.key && openTools.has(box.dataset.key)) box.classList.add('is-open'); });
+  return b;
+}
+
 /* ---------- chips & cards ---------- */
 function chip(name, src, { file, onX, cls = '', label, parent } = {}) {
   const f = file || S.resolve(name, src);
@@ -152,13 +162,14 @@ const groupTitle = (text, count) => h('div', { class: 'cs-group-title' }, text, 
 /** re-render `el` via `fn` whenever the vault index changes, without stealing focus while typing */
 function liveRender(component, el, fn) {
   let pending = false;
-  const run = async () => {
-    if (el.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { pending = true; return; }
+  const typing = () => { const a = document.activeElement; if (!a || !el.contains(a)) return false; if (a.tagName === 'TEXTAREA') return true; return a.tagName === 'INPUT' && ['text', 'search', 'number', 'date', 'email', 'url', ''].includes((a.getAttribute('type') || '').toLowerCase()); };
+  const run = async (force = true) => {
+    if (force !== true && typing()) { pending = true; return; }
     pending = false; const y = el.closest('.view-content, .markdown-preview-view, .cm-scroller')?.scrollTop;
     try { await fn(); } catch (e) { console.error('[Worldkeeper]', e); el.replaceChildren(h('div', { class: 'wk cs-empty' }, 'Worldkeeper hit an error rendering this. See the developer console.')); }
     const sc = el.closest('.view-content, .markdown-preview-view, .cm-scroller'); if (sc && y != null) sc.scrollTop = y;
   };
   el.addEventListener('focusout', () => { if (pending) setTimeout(run, 50); });
-  component.registerEvent(app().workspace.on(REFRESH, run));
+  component.registerEvent(app().workspace.on(REFRESH, () => run(false)));
   return run;
 }

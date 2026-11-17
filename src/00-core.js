@@ -148,7 +148,7 @@ const DEFAULT_SETTINGS = {
   ruleKinds: [{ k: 'Rule', c: '#5b9bd5', i: '⚖️' }, { k: 'Limitation', c: '#d9a85a', i: '⛓️' }, { k: 'Cost', c: '#d9534f', i: '🩸' }, { k: 'Taboo', c: '#9b6bd3', i: '🚫' }],
   divineRanks: ['Elder', 'Greater', 'Lesser', 'Demigod', 'Saint'],
   encCategories: ['History', 'Geography', 'Religion', 'Magic', 'Politics', 'Culture', 'Flora & Fauna', 'Technology', 'Timeline', 'Glossary', 'Miscellany'],
-  todoFile: 'Worldkeeper/To-do.md', todoTags: ['Writing', 'Worldbuilding', 'Revision', 'Research', 'Admin'],
+  todoFile: 'Worldkeeper/To-do.md', todoScope: 'all', todoFields: 'To-Do, todo, todos', todoTags: ['Writing', 'Worldbuilding', 'Revision', 'Research', 'Admin'],
   novel: { title: 'My Novel', series: '', genre: [], pov: '', audience: '', logline: '', synopsis: '', goal: 80000, deadline: '', stage: 'First draft', manualWords: 0, banner: '', bannerPosition: 60, bannerStyle: 'clear' },
   plotweaver: { enabled: true, novel: '' },
   history: {},

@@ -97,14 +97,8 @@ class DashboardsView extends ItemView {
    ===================================================================== */
 async function readTodos() {
   const f = app().vault.getAbstractFileByPath(normalizePath(ST().todoFile)); if (!(f instanceof TFile)) return [];
-  const txt = await app().vault.read(f); const out = [];
-  for (const line of txt.split('\n')) {
-    const m = line.match(/^\s*[-*] \[( |x|X)\] (.*)$/); if (!m) continue;
-    let text = m[2]; let due = ''; let tag = '';
-    const dm = text.match(/📅\s*(\d{4}-\d{2}-\d{2})/); if (dm) { due = dm[1]; text = text.replace(dm[0], ''); }
-    const tm = text.match(/(^|\s)#([\w/-]+)/); if (tm) { tag = ST().todoTags.find((t) => t.toLowerCase() === tm[2].toLowerCase()) || tm[2]; text = text.replace(tm[0], ' '); }
-    out.push({ done: m[1] !== ' ', text: text.replace(/\s+/g, ' ').trim(), due, tag });
-  }
+  const out = [];
+  for (const line of (await app().vault.read(f)).split('\n')) { const m = line.match(/^\s*[-*+] \[(.)\] (.*)$/); if (m) out.push({ done: m[1] !== ' ', ...parseTaskText(m[2]) }); }
   return out;
 }
 async function writeTodos(list) {
@@ -175,7 +169,7 @@ async function renderHome(state) {
   const setBanner = async (img) => { nv.banner = S.link(img); if (nv.bannerPosition == null) nv.bannerPosition = 60; await P.saveSettings(); };
   const changeBanner = h('button', {}, bnSrc ? '🖼 Change banner' : '🖼 Add banner');
   changeBanner.addEventListener('click', async (e) => { const [img] = await chooseImages(e, null); if (img) setBanner(img); });
-  const tools = h('div', { class: 'cs-banner-tools hd-tools' }, changeBanner);
+  const tools = h('div', { class: 'cs-banner-tools hd-tools', 'data-key': '__home' }, pencilToggle(), changeBanner);
   if (bnSrc) {
     const range = h('input', { type: 'range', min: 0, max: 100, value: bY });
     range.addEventListener('input', () => hero.style.setProperty('--y', range.value + '%'));
@@ -205,7 +199,9 @@ async function renderHome(state) {
   ap(root, h('div', { class: 'atlas-pills' }, ...Object.keys(T()).sort((a, b) => (TYPE_ORDER.indexOf(a) + 1 || 99) - (TYPE_ORDER.indexOf(b) + 1 || 99)).map((t) => h('button', { class: 'apill', onclick: () => P.openDashboards(t) }, h('span', {}, T()[t].icon), T()[t].plural, h('b', {}, String(S.notesOf(t).length))))));
 
   /* summary + todo */
-  ap(root, h('div', { class: 'hd-cols' }, renderSummary(state), await renderTodos(state)));
+  const colL = h('div', { class: 'hd-col' }), colR = h('div', { class: 'hd-col' });
+  ap(root, h('div', { class: 'hd-masonry' }, colL, colR));
+  ap(colL, renderSummary(state)); ap(colR, await renderTodos(state));
 
   /* plot weaver + activity */
   const pwCard = h('div', { class: 'card' });
@@ -213,7 +209,6 @@ async function renderHome(state) {
     const tot = Math.max(1, pw.scenes);
     const novelSel = h('select', { class: 'dropdown wk-sm' }, ...pwx.data.novels.map((n) => h('option', { value: n.title, selected: novelPW && n.id === novelPW.id }, n.title)));
     novelSel.addEventListener('change', async () => { pwc.novel = novelSel.value; await P.saveSettings(); });
-    const maxCh = Math.max(1, ...pw.chapters.map((c) => c.words));
     const openBoard = () => { if (!app().commands?.executeCommandById?.(`${PW_ID}:open-board`)) toast('Enable Plot Weaver to open its board'); };
     ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill ' + (pwx.enabled ? 'ok' : 'warn') }, (pwx.enabled ? 'connected' : 'saved data · plugin disabled') + (pwx.version ? ' · v' + pwx.version : '')), h('span', { class: 'sp' }), pwx.data.novels.length > 1 ? novelSel : null,
       h('button', { class: 'wk-sm', onclick: openBoard }, 'Open board ↗')),
@@ -221,8 +216,6 @@ async function renderHome(state) {
       h('div', { class: 'pw-status' }, ...pw.buckets.map((x) => h('i', { style: { width: (x.count / tot) * 100 + '%', background: x.color }, title: `${x.label}: ${x.count} scenes` }))),
       h('div', { class: 'pw-legend' }, ...pw.buckets.map((x) => h('span', {}, h('i', { style: { background: x.color } }), `${x.label} · ${x.count}`))),
       h('div', { class: 'pw-mini' }, h('div', {}, h('b', {}, String(pw.scenes)), `scenes · ${pw.withNote} with notes`), h('div', {}, h('b', {}, String(pw.plotlines)), 'plotlines'), h('div', {}, h('b', {}, String(pw.influences)), 'cause → effect links'), h('div', {}, h('b', {}, String(pw.offscreen)), 'off-screen events')),
-      pw.chapters.length ? [groupTitle('Chapters'), h('div', { class: 'bars' }, ...pw.chapters.map((c) => h('div', { class: 'bar' }, h('span', { class: 'l', title: `${c.scenes} scenes${c.status ? ' · least progressed: ' + c.status : ''}` }, c.name), h('span', { class: 't' }, h('i', { style: { width: (c.words / maxCh) * 100 + '%', background: c.color } })), h('span', { class: 'n' }, c.words ? fmtN(c.words) : c.scenes ? c.scenes + ' sc.' : '—'))))] : null,
-      pw.pov.length ? [groupTitle('Scenes per POV'), h('div', { class: 'bars' }, ...pw.pov.map(([c, k]) => { const cf = charForPov(c) || S.resolve(c, ''); const a = h('a', { class: 'l wk-link', title: cf ? cf.basename : '' }, c); a.addEventListener('click', (e) => (cf ? openFile(cf, e) : toast(`No note called “${c}”. Create a character with that name to link it`))); return h('div', { class: 'bar' }, a, h('span', { class: 't' }, h('i', { style: { width: (k / pw.pov[0][1]) * 100 + '%', background: 'var(--cs-accent)' } })), h('span', { class: 'n' }, k + ' scenes')); }))] : null,
     ] : empty(novelPW ? `“${novelPW.title}” has no scenes on the board yet.` : 'No novels in Plot Weaver yet.'),
     h('div', { class: 'cs-hint cs-mt' }, `Read from Plot Weaver’s cards. Status and words come from each card’s linked note, using Plot Weaver’s fields: “${pwx.settings.statusField}” and “${pwx.settings.wordsField}”.`));
   } else {
@@ -238,12 +231,12 @@ async function renderHome(state) {
     h('div', { class: 'cs-hint cs-mt' }, 'Worldkeeper saves your total word count once a day to draw this.'),
     groupTitle('🧭 Needs attention'), h('ul', { class: 'att' }, ...attention().slice(0, 7).map(([n, why]) => { const a = h('a', { class: 'wk-link' }, n.basename); a.addEventListener('click', (e) => openFile(n, e)); return h('li', {}, h('span', {}, typeIcon(n)), a, h('span', { class: 'why' }, why)); })),
     groupTitle('🕑 Recently edited'), h('ul', { class: 'att' }, ...[...S.ix().type.keys()].map((p) => app().vault.getAbstractFileByPath(p)).filter(Boolean).sort((a, b) => b.stat.mtime - a.stat.mtime).slice(0, 6).map((n) => { const a = h('a', { class: 'wk-link' }, n.basename); a.addEventListener('click', (e) => openFile(n, e)); return h('li', {}, h('span', {}, typeIcon(n)), a, h('span', { class: 'why' }, new Date(n.stat.mtime).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }))); })));
-  ap(root, h('div', { class: 'hd-cols' }, pwCard, actCard));
+  ap(colL, pwCard); ap(colR, actCard);
 
   /* tree + shared */
-  ap(root, h('div', { class: 'hd-cols' }, h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '🗺️ World tree'), h('span', { class: 'sp' }), h('span', { class: 'cs-hint' }, 'Planet › Continent › Kingdom › Place › Hub')), worldTree()),
-    h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '🌐 Shared across the world')), ...[...CROSS, ...DIVINE].map((t) => h('div', { class: 'cs-mb' }, groupTitle(`${T()[t].icon} ${T()[t].plural}`, S.notesOf(t).length),
-      h('div', { class: 'cs-tile-body' }, ...S.notesOf(t).map((n) => chip(n.path, '', { file: n, label: n.basename }))))))));
+  ap(colL, h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '🗺️ World tree'), h('span', { class: 'sp' }), h('span', { class: 'cs-hint' }, 'Planet › Continent › Kingdom › Place › Hub')), worldTree()));
+  ap(colR, h('div', { class: 'card' }, h('div', { class: 'card-h' }, h('h3', {}, '🌐 Shared across the world')), ...[...CROSS, ...DIVINE].map((t) => h('div', { class: 'cs-mb' }, groupTitle(`${T()[t].icon} ${T()[t].plural}`, S.notesOf(t).length),
+      h('div', { class: 'cs-tile-body' }, ...S.notesOf(t).map((n) => chip(n.path, '', { file: n, label: n.basename })))))));
   return root;
 }
 function renderSummary(state) {
@@ -263,10 +256,66 @@ function renderSummary(state) {
     ...String(nv.synopsis || '').split(/\n\n+/).filter(Boolean).map((p) => h('p', { class: 'sm-p' }, ...linkify(p))), h('div', { class: 'cs-hint' }, 'Names of notes in your world are linked automatically.'));
   return card;
 }
+/** parse one task line's text into {text, due, tag} */
+function parseTaskText(raw) {
+  let text = raw; let due = ''; let tag = '';
+  const dm = text.match(/📅\s*(\d{4}-\d{2}-\d{2})/); if (dm) { due = dm[1]; text = text.replace(dm[0], ''); }
+  const tm = text.match(/(^|\s)#([\w/-]+)/); if (tm) { tag = ST().todoTags.find((t) => t.toLowerCase().replace(/\s+/g, '-') === tm[2].toLowerCase()) || tm[2]; text = text.replace(tm[0], ' '); }
+  return { text: text.replace(/\s+/g, ' ').trim(), due, tag };
+}
+/** tasks written in other notes (checkbox list items), found through the metadata cache */
+async function readNoteTasks() {
+  const scope = ST().todoScope || 'all'; if (scope === 'off') return [];
+  const todo = normalizePath(ST().todoFile); const out = [];
+  for (const f of S.files()) {
+    if (f.path === todo) continue; if (scope === 'worldkeeper' && !S.managed(f) && !S.isEntry(f)) continue;
+    // frontmatter tasks: a To-Do property holding one task or a list of them ("[x] " prefix = done)
+    const fm = S.fm(f); const wanted = String(ST().todoFields || 'To-Do').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+    for (const key of Object.keys(fm)) {
+      if (!wanted.includes(key.toLowerCase())) continue;
+      arr(fm[key]).forEach((v, index) => {
+        if (v == null || v === '') return;
+        let raw = typeof v === 'object' ? String(v.task ?? v.text ?? '') : String(v); let isDone = typeof v === 'object' ? !!v.done : false;
+        const pm = raw.match(/^\s*\[(.)\]\s*/); if (pm) { isDone = pm[1] !== ' '; raw = raw.slice(pm[0].length); }
+        if (raw.trim()) out.push({ ...parseTaskText(raw), done: isDone, file: f, kind: 'fm', key, index, raw });
+      });
+    }
+    const items = ((app().metadataCache.getFileCache(f) || {}).listItems || []).filter((li) => li.task !== undefined);
+    if (!items.length) continue;
+    const ls = (await app().vault.cachedRead(f)).split('\n');
+    for (const li of items) {
+      const line = li.position.start.line; const m = (ls[line] || '').match(/^(\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) continue;
+      out.push({ ...parseTaskText(m[4]), done: m[2] !== ' ', file: f, line, raw: m[4] });
+    }
+  }
+  return out;
+}
+async function setNoteTask(t, { done, text } = {}) {
+  if (t.kind === 'fm') {
+    await S.write(t.file, (fm) => {
+      const isArr = Array.isArray(fm[t.key]); const list = arr(fm[t.key]).slice(); const cur = list[t.index]; if (cur === undefined) return;
+      const keep = [...(t.raw.match(/(^|\s)#[\w/-]+/g) || []), ...(t.raw.match(/📅\s*\d{4}-\d{2}-\d{2}/g) || [])].map((x) => x.trim()).join(' ');
+      const body = text !== undefined ? text + (keep ? ' ' + keep : '') : t.raw; const d = done === undefined ? t.done : done;
+      if (cur && typeof cur === 'object') list[t.index] = { ...cur, [('task' in cur) ? 'task' : 'text']: body, done: d };
+      else list[t.index] = (d ? '[x] ' : '') + body;
+      fm[t.key] = isArr ? list : list[0];
+    });
+    return;
+  }
+  await app().vault.process(t.file, (txt) => {
+    const ls = txt.split('\n'); const m = (ls[t.line] || '').match(/^(\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) return txt;
+    const mark = done === undefined ? m[2] : done ? 'x' : ' ';
+    let body = m[4];
+    if (text !== undefined) { const keep = [...(body.match(/(^|\s)#[\w/-]+/g) || []), ...(body.match(/📅\s*\d{4}-\d{2}-\d{2}/g) || [])].map((x) => x.trim()).join(' '); body = text + (keep ? ' ' + keep : ''); }
+    ls[t.line] = m[1] + mark + m[3] + body; return ls.join('\n');
+  });
+}
 async function renderTodos(state) {
-  const s = ST(); const today = todayISO(); const st = state.todo ??= { filter: 'open', tag: '' };
-  const list = await readTodos(); const save = async () => { await writeTodos(list); state.rerender(); };
-  const open = list.filter((t) => !t.done), done = list.filter((t) => t.done); const overdue = open.filter((t) => t.due && t.due < today).length;
+  const s = ST(); const today = todayISO(); const st = state.todo ??= { filter: 'open', tag: '', source: 'all' };
+  const list = await readTodos(); const noteTasks = await readNoteTasks();
+  const save = async () => { await writeTodos(list); state.rerender(); };
+  const all = [...list.map((t) => ({ ...t, own: t })), ...noteTasks];
+  const open = all.filter((t) => !t.done), done = all.filter((t) => t.done); const overdue = open.filter((t) => t.due && t.due < today).length;
   const card = h('div', { class: 'card td-card' });
   ap(card, h('div', { class: 'card-h' }, h('h3', {}, '☑️ To-do'), h('span', { class: 'pill' }, `${open.length} open`), overdue ? h('span', { class: 'pill warn' }, `${overdue} overdue`) : null, h('span', { class: 'sp' }),
     h('button', { class: 'wk-sm', title: 'Turn Needs attention items into tasks', onclick: async () => { const have = new Set(list.map((t) => t.text)); let k = 0; for (const [n, why] of attention().slice(0, 5)) { const text = `[[${n.basename}]]: ${why}`; if (!have.has(text)) { list.push({ done: false, text, due: '', tag: 'Worldbuilding' }); k++; } } toast(k ? `Added ${k} tasks` : 'Nothing new to add'); if (k) await save(); } }, '+ From Needs attention')));
@@ -277,26 +326,31 @@ async function renderTodos(state) {
   inp.addEventListener('input', () => { if (inp.value.slice(0, inp.selectionStart).endsWith('[[')) { const pos = inp.selectionStart; suggest({ items: S.files().filter((f) => S.managed(f) || S.isEntry(f)).sort(byName).map((f) => ({ label: f.basename, sub: typeLabel(f), value: f.basename })), placeholder: 'Link a note…', onPick: (n) => { inp.value = inp.value.slice(0, pos) + n + ']] ' + inp.value.slice(pos); inp.focus(); } }); } });
   ap(card, h('div', { class: 'td-add' }, inp, tag, due, h('button', { class: 'mod-cta', onclick: add }, 'Add')));
   const tagSel = h('select', { class: 'dropdown wk-sm' }, h('option', { value: '' }, 'All tags'), ...s.todoTags.map((t) => h('option', { selected: st.tag === t }, t))); tagSel.addEventListener('change', () => { st.tag = tagSel.value; state.rerender(); });
-  ap(card, h('div', { class: 'td-filters' }, ...[['open', `Open · ${open.length}`], ['done', `Done · ${done.length}`], ['all', 'All']].map(([k, l]) => h('button', { class: st.filter === k ? 'is-on' : '', onclick: () => { st.filter = k; state.rerender(); } }, l)), h('span', { class: 'sp' }), tagSel));
-  const shown = list.filter((t) => (st.filter === 'all' || (st.filter === 'done') === t.done) && (!st.tag || t.tag === st.tag));
+  const srcSel = h('select', { class: 'dropdown wk-sm' }, ...[['all', 'All sources'], ['list', 'To-do list'], ['notes', `From notes · ${noteTasks.length}`]].map(([v, l]) => h('option', { value: v, selected: st.source === v }, l))); srcSel.addEventListener('change', () => { st.source = srcSel.value; state.rerender(); });
+  ap(card, h('div', { class: 'td-filters' }, ...[['open', `Open · ${open.length}`], ['done', `Done · ${done.length}`], ['all', 'All']].map(([k, l]) => h('button', { class: st.filter === k ? 'is-on' : '', onclick: () => { st.filter = k; state.rerender(); } }, l)), h('span', { class: 'sp' }), noteTasks.length ? srcSel : null, tagSel));
+  const shown = all.filter((t) => (st.filter === 'all' || (st.filter === 'done') === t.done) && (!st.tag || t.tag === st.tag) && (st.source === 'all' || (st.source === 'list') === !!t.own));
   const rich = (t) => t.split(/(\[\[[^\]]+\]\])/).map((part) => { const m = part.match(/^\[\[([^\]]+)\]\]$/); if (!m) return part; const a = h('a', { class: 'wk-link' }, display(linkName(part))); a.addEventListener('click', (e) => { e.stopPropagation(); openName(m[1], '', e); }); hover(a, m[1], '', a); return a; });
   const ul = h('ul', { class: 'td-list' }); let drag = null;
   for (const t of shown) {
-    const over = !t.done && t.due && t.due < today;
-    const cb = h('input', { type: 'checkbox', checked: t.done }); cb.addEventListener('change', async () => { t.done = cb.checked; await save(); });
+    const over = !t.done && t.due && t.due < today; const own = t.own;
+    const cb = h('input', { type: 'checkbox', checked: t.done });
+    cb.addEventListener('change', async () => { if (own) { own.done = cb.checked; await save(); } else { await setNoteTask(t, { done: cb.checked }); setTimeout(() => state.rerender(), 120); } });
     const txt = h('span', { class: 'td-text' }, ...rich(t.text));
-    txt.addEventListener('dblclick', () => { const ed = h('input', { type: 'text', value: t.text, class: 'td-edit' }); ed.addEventListener('keydown', (e) => { if (e.key === 'Enter') ed.blur(); }); ed.addEventListener('blur', async () => { t.text = ed.value.trim() || t.text; await save(); }); txt.replaceWith(ed); ed.focus(); });
-    const li = h('li', { class: 'td-item' + (t.done ? ' is-done' : ''), draggable: 'true' }, h('span', { class: 'td-grip', title: 'Drag to reorder' }, '⋮⋮'), cb, txt,
-      h('span', { class: 'td-meta' }, t.due ? h('span', { class: 'td-due' + (over ? ' is-over' : '') }, (over ? '⚠ ' : '📅 ') + new Date(t.due + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })) : null, t.tag ? h('span', { class: 'pill' }, t.tag) : null,
-        h('span', { class: 'cs-x', title: 'Delete', onclick: async () => { list.splice(list.indexOf(t), 1); await save(); } }, '✕')));
-    li.addEventListener('dragstart', () => { drag = t; li.classList.add('is-dragging'); }); li.addEventListener('dragend', () => li.classList.remove('is-dragging'));
-    li.addEventListener('dragover', (e) => { e.preventDefault(); li.classList.add('is-drop'); }); li.addEventListener('dragleave', () => li.classList.remove('is-drop'));
-    li.addEventListener('drop', async (e) => { e.preventDefault(); li.classList.remove('is-drop'); if (!drag || drag === t) return; list.splice(list.indexOf(drag), 1); list.splice(list.indexOf(t), 0, drag); await save(); });
-    ap(ul, li);
+    txt.addEventListener('dblclick', () => { const ed = h('input', { type: 'text', value: t.text, class: 'td-edit' }); ed.addEventListener('keydown', (e) => { if (e.key === 'Enter') ed.blur(); }); ed.addEventListener('blur', async () => { const v = ed.value.trim() || t.text; if (own) { own.text = v; await save(); } else { await setNoteTask(t, { text: v }); setTimeout(() => state.rerender(), 120); } }); txt.replaceWith(ed); ed.focus(); });
+    const srcChip = own ? null : (() => { const c = h('span', { class: 'td-src', title: `${t.file.path}, line ${t.line + 1}` }, typeIcon(t.file) + ' ' + t.file.basename); c.addEventListener('click', (e) => app().workspace.getLeaf(Keymap.isModEvent(e) ? 'tab' : false).openFile(t.file, { eState: { line: t.line } })); hover(c, t.file.path, '', c); return c; })();
+    const li = h('li', { class: 'td-item' + (t.done ? ' is-done' : '') + (own ? '' : ' is-note'), draggable: own ? 'true' : 'false' }, h('span', { class: 'td-grip', title: own ? 'Drag to reorder' : '' }, own ? '⋮⋮' : ''), cb, txt,
+      h('span', { class: 'td-meta' }, srcChip, t.due ? h('span', { class: 'td-due' + (over ? ' is-over' : '') }, (over ? '⚠ ' : '📅 ') + new Date(t.due + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' })) : null, t.tag ? h('span', { class: 'pill' }, t.tag) : null,
+        own ? h('span', { class: 'cs-x', title: 'Delete', onclick: async () => { list.splice(list.indexOf(own), 1); await save(); } }, '✕') : null));
+    if (own) {
+      li.addEventListener('dragstart', () => { drag = own; li.classList.add('is-dragging'); }); li.addEventListener('dragend', () => li.classList.remove('is-dragging'));
+      li.addEventListener('dragover', (e) => { if (drag) { e.preventDefault(); li.classList.add('is-drop'); } }); li.addEventListener('dragleave', () => li.classList.remove('is-drop'));
+      li.addEventListener('drop', async (e) => { e.preventDefault(); li.classList.remove('is-drop'); if (!drag || drag === own) return; list.splice(list.indexOf(drag), 1); list.splice(list.indexOf(own), 0, drag); drag = null; await save(); });
+    }
+    ul.append(li);
   }
   ap(card, shown.length ? ul : empty(st.filter === 'done' ? 'Nothing finished yet.' : 'All clear 🎉'));
-  ap(card, h('div', { class: 'td-foot' }, h('span', { class: 'cs-hint' }, `Saved as Markdown tasks in ${s.todoFile} (works with the Tasks plugin). Double-click a task to edit it.`),
-    done.length ? h('button', { class: 'wk-sm', onclick: async () => { for (let i = list.length - 1; i >= 0; i--) if (list[i].done) list.splice(i, 1); await save(); } }, 'Clear done') : null,
+  ap(card, h('div', { class: 'td-foot' }, h('span', { class: 'cs-hint' }, `Your list is saved in ${s.todoFile}${s.todoScope === 'off' ? '' : `; checkbox tasks and “${String(s.todoFields || 'To-Do').split(',')[0].trim()}” properties in other notes appear here too`}. Double-click a task to edit it.`),
+    list.some((t) => t.done) ? h('button', { class: 'wk-sm', onclick: async () => { for (let i = list.length - 1; i >= 0; i--) if (list[i].done) list.splice(i, 1); await save(); } }, 'Clear done') : null,
     h('button', { class: 'wk-sm', onclick: () => { const f = app().vault.getAbstractFileByPath(normalizePath(s.todoFile)); if (f) openFile(f); else toast('Add a task first'); } }, 'Open file')));
   return card;
 }

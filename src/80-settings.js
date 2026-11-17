@@ -73,6 +73,8 @@ class WorldkeeperSettingTab extends PluginSettingTab {
         head('Reset'), row(`Reset the ${t.label} template`, 'Restores its default fields and layout.', btn('Reset', () => confirm2(`Reset ${t.label}?`, 'Its fields, lists and layout go back to the defaults. Your notes are not changed.', () => { if (DEFAULT_TYPES[this.type]) { s.types[this.type] = clone(DEFAULT_TYPES[this.type]); redraw(); } }, 'Reset'))));
     } else if (this.tab === 'novel') {
       const nv = s.novel, pw = s.plotweaver;
+      const scopeSel = h('select', { class: 'dropdown' }, ...[['all', 'All notes'], ['worldkeeper', 'Worldkeeper notes only'], ['off', 'Only my to-do list']].map(([v, l]) => h('option', { value: v, selected: (s.todoScope || 'all') === v }, l))); scopeSel.addEventListener('change', () => { s.todoScope = scopeSel.value; save(); });
+      const scopeRow = row('Tasks from other notes', 'Checkbox tasks (- [ ]) written in notes also appear on the Home to-do card', scopeSel);
       const pwStatusRow = row('Status', 'Checking…', h('span', { class: 'pill' }, '…'));
       const novelSel = h('select', { class: 'dropdown' }, h('option', { value: '' }, 'Plot Weaver’s current novel'));
       novelSel.addEventListener('change', () => { pw.novel = novelSel.value; save(); });
@@ -90,7 +92,7 @@ class WorldkeeperSettingTab extends PluginSettingTab {
       ap(root, head('Novel', 'Shown on the Home dashboard. Edit the logline and summary from Home.'), row('Title', '', txt(nv, 'title')), row('Series line', 'e.g. Book 1 of the …', txt(nv, 'series')), row('Word goal', '', goal), row('Deadline', '', dl), row('Stage', '', stage),
         head('Plot Weaver', 'Worldkeeper reads Plot Weaver’s cards (chapters, POVs, plotlines, cause → effect links, off-screen events) and each card’s linked scene note.'),
         pwStatusRow, row('Use Plot Weaver stats', 'Off = enter word counts by hand on Home', toggle(pw, 'enabled')), pwNovelRow, pwFieldsRow,
-        head('To-do'), row('To-do file', 'Tasks are saved here as a Markdown checklist', txt(s, 'todoFile', '', null, 'wk-wide')), row('Tags', 'One per line', area(() => s.todoTags.join('\n'), (v) => { s.todoTags = v; })),
+        head('To-do'), row('To-do file', 'Tasks are saved here as a Markdown checklist', txt(s, 'todoFile', '', null, 'wk-wide')), scopeRow, row('To-do properties', 'Frontmatter property names whose values count as tasks (comma-separated). Start a value with [x] to mark it done.', txt(s, 'todoFields', 'To-Do, todo, todos', null, 'wk-wide')), row('Tags', 'One per line', area(() => s.todoTags.join('\n'), (v) => { s.todoTags = v; })),
         row('Reset writing history', 'Clears the saved daily word counts used by the activity chart.', btn('Clear', () => confirm2('Clear writing history?', 'The activity chart starts again from today.', () => { s.history = {}; save(); }, 'Clear'))));
     } else {
       const bs = h('select', { class: 'dropdown' }, ...[['clear', 'Clear image'], ['blurred', 'Blurred backdrop']].map(([v, l]) => h('option', { value: v, selected: s.defaultBannerStyle === v }, l))); bs.addEventListener('change', () => { s.defaultBannerStyle = bs.value; save(); });

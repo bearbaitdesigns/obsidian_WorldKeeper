@@ -55,7 +55,7 @@ A note shows its sheet wherever it contains this block:
 
 New and converted notes get the block automatically. Each sheet has:
 
-- **Banner**: the name, a badge, aliases, and links shown as a breadcrumb (e.g. 📍 Thalassar › Varos › The Northmarch › Saltgate). You can upload or choose a banner image, drag an image onto the banner, set its vertical focus, and switch between clear and blurred.
+- **Banner**: click the ✎ pencil to show its tools. It holds the name, a badge, aliases, and links shown as a breadcrumb (e.g. 📍 Thalassar › Varos › The Northmarch › Saltgate). You can upload or choose a banner image, drag an image onto the banner, set its vertical focus, and switch between clear and blurred.
 - **Portrait or emblem**: click it to upload an image or choose one from your vault.
 - **Tiles**: dropdowns and checklists for value-list fields, and link pickers for linked notes, all in one row.
 - **Tabs**: one for each body heading (Notes, Backstory, History…), Details, Relationships, linked notes, and type-specific modules.
@@ -95,6 +95,22 @@ sort: size
 in: "[[The Northmarch]]"
 ```
 ````
+
+### To-do
+
+The Home to-do card combines three sources:
+
+- **Your list**, saved as Markdown tasks in `Worldkeeper/To-do.md`. You can add, tick, edit (double-click), reorder by dragging, and delete tasks.
+- **Checkbox tasks in any note**, such as `- [ ] Name the third moon #worldbuilding 📅 2026-11-25`. Ticking one on Home ticks it in that note.
+- **A `To-Do` property in a note's frontmatter**, holding one task or a list. Start a value with `[x] ` to mark it done; ticking a task on Home writes the `[x]` back.
+
+```yaml
+To-Do:
+  - Decide who rules [[Corran]] #worldbuilding
+  - "[x] Pick an ocean colour"
+```
+
+Each note task shows a chip naming its note, which opens the note when clicked. Under **Settings → Novel & Plot Weaver → To-do** you can choose which notes are scanned (all notes, Worldkeeper notes only, or none) and which property names count as to-dos (default `To-Do, todo, todos`).
 
 ### Folders
 
