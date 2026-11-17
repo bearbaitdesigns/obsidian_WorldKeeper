@@ -72,18 +72,24 @@ class WorldkeeperSettingTab extends PluginSettingTab {
         h('div', { class: 'wk-row' }, btn('⧉ Copy', () => navigator.clipboard.writeText(templateText(this.type)).then(() => toast('Template copied'))), btn(`Write all template files to ${s.templatesFolder}/`, () => writeTemplates())),
         head('Reset'), row(`Reset the ${t.label} template`, 'Restores its default fields and layout.', btn('Reset', () => confirm2(`Reset ${t.label}?`, 'Its fields, lists and layout go back to the defaults. Your notes are not changed.', () => { if (DEFAULT_TYPES[this.type]) { s.types[this.type] = clone(DEFAULT_TYPES[this.type]); redraw(); } }, 'Reset'))));
     } else if (this.tab === 'novel') {
-      const nv = s.novel, pw = s.plotweaver; const a = app();
-      const installed = !!(a.plugins && (a.plugins.manifests?.['plot-weaver'])); const enabled = !!(a.plugins && a.plugins.plugins?.['plot-weaver']);
+      const nv = s.novel, pw = s.plotweaver;
+      const pwStatusRow = row('Status', 'Checking…', h('span', { class: 'pill' }, '…'));
+      const novelSel = h('select', { class: 'dropdown' }, h('option', { value: '' }, 'Plot Weaver’s current novel'));
+      novelSel.addEventListener('change', () => { pw.novel = novelSel.value; save(); });
+      const pwNovelRow = row('Novel', 'Which Plot Weaver novel the Home dashboard tracks', novelSel);
+      const pwFieldsRow = row('Status & word-count fields', 'Read from Plot Weaver’s own settings, so they always match', h('code', {}, '…'));
+      pwLoad().then((x) => {
+        pwStatusRow.replaceWith(row('Status', x.installed ? `Detected plot-weaver ${x.version}${x.enabled ? '' : ' (disabled; reading its saved data)'}` : 'Not installed', h('span', { class: 'pill ' + (x.installed && x.enabled ? 'ok' : 'warn') }, x.installed ? (x.enabled ? 'connected' : 'disabled') : 'missing')));
+        for (const n of (x.data && x.data.novels) || []) ap(novelSel, h('option', { value: n.title, selected: pw.novel === n.title }, n.title + (x.data.activeNovelId === n.id ? ' (current)' : '')));
+        if (pw.novel && !((x.data && x.data.novels) || []).some((n) => n.title === pw.novel)) ap(novelSel, h('option', { value: pw.novel, selected: true }, pw.novel + ' (not found)'));
+        pwFieldsRow.querySelector('code').textContent = `status: ${x.settings.statusField} · words: ${x.settings.wordsField}`;
+      });
       const goal = h('input', { type: 'number', value: nv.goal }); goal.addEventListener('change', () => { nv.goal = +goal.value; save(); });
       const dl = h('input', { type: 'date', value: nv.deadline || '' }); dl.addEventListener('change', () => { nv.deadline = dl.value; save(); });
       const stage = h('select', { class: 'dropdown' }, ...['Planning', 'First draft', 'Second draft', 'Revising', 'Editing', 'Querying', 'Published'].map((v) => h('option', { selected: nv.stage === v }, v))); stage.addEventListener('change', () => { nv.stage = stage.value; save(); });
       ap(root, head('Novel', 'Shown on the Home dashboard. Edit the logline and summary from Home.'), row('Title', '', txt(nv, 'title')), row('Series line', 'e.g. Book 1 of the …', txt(nv, 'series')), row('Word goal', '', goal), row('Deadline', '', dl), row('Stage', '', stage),
-        head('Plot Weaver', 'Reads stats from Plot Weaver (plot-weaver). Word counts and statuses come from your scene notes’ properties.'),
-        row('Status', installed ? `Detected plot-weaver ${a.plugins.manifests['plot-weaver'].version || ''}${enabled ? '' : ' (disabled)'}` : 'Not installed', h('span', { class: 'pill ' + (installed && enabled ? 'ok' : 'warn') }, installed ? (enabled ? 'connected' : 'disabled') : 'missing')),
-        row('Use Plot Weaver stats', 'Off = enter word counts by hand on Home', toggle(pw, 'enabled')),
-        row('Novel', 'Blank = all novels. Matched against the scene notes’ novel property.', txt(pw, 'novel')),
-        row('Word-count property', 'Match Plot Weaver → Settings', txt(pw, 'wordsKey')), row('Status property', '', txt(pw, 'statusKey')),
-        row('Chapter / POV / plotline / novel properties', 'Used to recognise scene notes and group stats', txt(pw, 'chapterKey'), txt(pw, 'povKey'), txt(pw, 'plotlineKey'), txt(pw, 'novelKey')),
+        head('Plot Weaver', 'Worldkeeper reads Plot Weaver’s cards (chapters, POVs, plotlines, cause → effect links, off-screen events) and each card’s linked scene note.'),
+        pwStatusRow, row('Use Plot Weaver stats', 'Off = enter word counts by hand on Home', toggle(pw, 'enabled')), pwNovelRow, pwFieldsRow,
         head('To-do'), row('To-do file', 'Tasks are saved here as a Markdown checklist', txt(s, 'todoFile', '', null, 'wk-wide')), row('Tags', 'One per line', area(() => s.todoTags.join('\n'), (v) => { s.todoTags = v; })),
         row('Reset writing history', 'Clears the saved daily word counts used by the activity chart.', btn('Clear', () => confirm2('Clear writing history?', 'The activity chart starts again from today.', () => { s.history = {}; save(); }, 'Clear'))));
     } else {

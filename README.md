@@ -78,7 +78,7 @@ Every field, list, label, icon, tab and tab order can be changed in **Settings �
 
 ### Dashboards
 
-- **Home** (🌍): a novel banner with a goal ring, word-count stats, the book's logline and summary, a to-do list, Plot Weaver stats, a writing-activity chart, a *Needs attention* list, recently edited notes, a world tree, and pills that open each type's dashboard.
+- **Home** (🌍): a novel banner with a goal ring (upload, drag in, set focus, clear or blurred, like any note banner), word-count stats, the book's logline and summary, a to-do list, Plot Weaver stats, a writing-activity chart, a *Needs attention* list, recently edited notes, a world tree, and pills that open each type's dashboard.
 - **Dashboards** (▦): one dashboard per type, shown as cards or a table, with search, filters, an "anywhere in [region]" filter and sorting.
 - **Encyclopedia** (📚): worldbuilding entries sorted into categories. Each entry has tags, linked elements, See also, and related entries worked out from shared links. Linked notes show the entry under their **Linked here** tab.
 
@@ -102,7 +102,13 @@ in: "[[The Northmarch]]"
 
 ### Plot Weaver
 
-When Plot Weaver is installed and enabled, Worldkeeper reads your **scene notes**: notes that have Plot Weaver's word-count and status properties (`words` and `status` by default) plus a chapter, POV, plotline or novel property. It also counts cause → effect links and off-screen events from Plot Weaver's saved outline when it can read them. Property names can be changed in **Settings → Novel & Plot Weaver** to match your Plot Weaver settings.
+When Plot Weaver is installed, Worldkeeper reads its outline directly. It uses the live plugin when Plot Weaver is enabled, and its saved data when it isn't.
+
+- **Cards and linked notes.** Each card's scene note (the note you created or linked from the card) supplies status and word count. Worldkeeper reads them with **Plot Weaver's own field settings**, such as `status` and `words, wordcount, word-count, word_count`, and maps them through Plot Weaver's status definitions and colours. You never set field names twice.
+- **The same counting rules as Plot Weaver's stats strip.** Scenes are cards on the board in a chapter, prologue, interlude or epilogue. Planning sections, part summaries, off-screen events, parked or archived cards, and archived plotlines are left out.
+- **On Home**, the Plot Weaver card shows scenes by status, scenes with notes, plotlines, cause → effect links, off-screen events, words per chapter (coloured by the least-progressed scene) and scenes per POV. Click **Open board** to jump into Plot Weaver. If Plot Weaver has more than one novel, choose which one to track.
+- **On sheets**, a 🧵 **Scenes** tab appears on any character who is a card's POV, and on any note that a scene note links to (characters, places, items, magic…).
+- **POV names** link to character notes by exact name or alias, or by first name when only one character has it ("Cassius" → Cassius Venn).
 
 The writing-activity chart comes from a snapshot of your total word count, which Worldkeeper saves once a day.
 

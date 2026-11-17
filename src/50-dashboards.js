@@ -93,45 +93,6 @@ class DashboardsView extends ItemView {
 }
 
 /* =====================================================================
-   Plot Weaver
-   ===================================================================== */
-const PW_STATUS = [{ k: 'Completed', c: '#5fc27e', re: /complet|done|final/i }, { k: 'Revising', c: '#d9a85a', re: /revis|edit/i }, { k: 'In progress', c: '#5b9bd5', re: /progress|draft|writing/i }, { k: 'Not started', c: '#6f6f6f', re: /not|todo|idea|plan/i }];
-const pwBucket = (v) => (PW_STATUS.find((x) => x.re.test(String(v || ''))) || PW_STATUS[3]).k;
-async function plotWeaverStats() {
-  const pw = ST().plotweaver; const a = app();
-  const installed = !!(a.plugins && (a.plugins.manifests?.['plot-weaver'] || a.plugins.plugins?.['plot-weaver']));
-  const enabled = !!(a.plugins && a.plugins.plugins?.['plot-weaver']);
-  const version = a.plugins?.manifests?.['plot-weaver']?.version || '';
-  const out = { installed, enabled, version, novels: [], words: 0, scenes: 0, statuses: {}, chapters: [], pov: [], plotlines: 0, influences: null, offscreen: null };
-  if (!installed) return out;
-  const novelSet = new Set(); const chapters = new Map(); const pov = new Map(); const plots = new Set();
-  for (const f of S.files()) {
-    const fm = S.fm(f);
-    const isScene = (fm[pw.wordsKey] != null || fm[pw.statusKey] != null) && (fm[pw.chapterKey] != null || fm[pw.plotlineKey] != null || fm[pw.povKey] != null || fm[pw.novelKey] != null);
-    if (!isScene) continue;
-    const nv = display(linkName(arr(fm[pw.novelKey])[0] ?? '')); if (nv) novelSet.add(nv);
-    if (pw.novel && nv && nv !== pw.novel) continue;
-    const w = Number(String(arr(fm[pw.wordsKey])[0] ?? 0).replace(/[^\d.]/g, '')) || 0; const stt = pwBucket(arr(fm[pw.statusKey])[0]);
-    out.words += w; out.scenes++; out.statuses[stt] = (out.statuses[stt] || 0) + 1;
-    const ch = display(linkName(arr(fm[pw.chapterKey])[0] ?? '')) || 'Unassigned'; const c = chapters.get(ch) || { words: 0, st: {} }; c.words += w; c.st[stt] = (c.st[stt] || 0) + 1; chapters.set(ch, c);
-    for (const p of names(fm[pw.povKey])) pov.set(display(p), (pov.get(display(p)) || 0) + 1);
-    for (const p of names(fm[pw.plotlineKey])) plots.add(display(p));
-  }
-  out.novels = [...novelSet].sort(); out.plotlines = plots.size;
-  const rank = (n) => (/^prolog/i.test(n) ? -1 : /^epilog/i.test(n) ? 2 : /^unassigned$/i.test(n) ? 3 : 0);
-  out.chapters = [...chapters.entries()].sort((x, y) => rank(x[0]) - rank(y[0]) || x[0].localeCompare(y[0], undefined, { numeric: true })).map(([name, c]) => ({ name, words: c.words, status: PW_STATUS.find((s) => c.st[s.k] && Object.keys(c.st).length === 1)?.k || (c.st['In progress'] || c.st['Revising'] ? 'In progress' : Object.keys(c.st)[0]) }));
-  out.pov = [...pov.entries()].sort((x, y) => y[1] - x[1]);
-  // Plot Weaver keeps its outline in data.json; count influences / off-screen events defensively
-  try {
-    const raw = await a.vault.adapter.read(`${a.vault.configDir}/plugins/plot-weaver/data.json`); const data = JSON.parse(raw);
-    let inf = 0, off = 0; const walk = (o, d) => { if (!o || typeof o !== 'object' || d > 8) return; for (const [k, v] of Object.entries(o)) { if (Array.isArray(v)) { if (/influence/i.test(k)) inf += v.length; if (/off.?screen/i.test(k)) off += v.length; } if (v && typeof v === 'object') walk(v, d + 1); } };
-    walk(data, 0); out.influences = inf; out.offscreen = off;
-    if (!out.novels.length && Array.isArray(data.novels)) out.novels = data.novels.map((n) => n.title || n.name).filter(Boolean);
-  } catch (e) { /* not readable — leave null */ }
-  return out;
-}
-
-/* =====================================================================
    to-do (stored as Markdown tasks in a note)
    ===================================================================== */
 async function readTodos() {
@@ -193,7 +154,7 @@ function linkify(text) {
 }
 async function renderHome(state) {
   const s = ST(), nv = s.novel; const pwc = s.plotweaver;
-  const pw = await plotWeaverStats(); const usePW = pwc.enabled && pw.enabled;
+  const pwx = await pwLoad(); const novelPW = pwNovel(pwx); const pw = pwStats(pwx, novelPW); const usePW = pwc.enabled && pwx.installed && !!pwx.data;
   const words = usePW ? pw.words : Number(nv.manualWords) || 0;
   // daily snapshot for the activity chart
   const today = todayISO(); if (s.history[today] !== words) { s.history[today] = words; P.saveSettingsQuiet(); }
@@ -208,17 +169,27 @@ async function renderHome(state) {
   let streak = 0; for (let i = activity.length - 1; i >= 0 && activity[i] > 0; i--) streak++;
   const root = h('div', { class: 'wk cs-root wk-home', style: s.accentColor ? { '--cs-accent': s.accentColor } : {} });
 
-  /* hero */
+  /* hero (banner customizable like note banners) */
   const bnSrc = S.imageSrc(nv.banner, '');
-  const changeBanner = h('button', {}, '🖼 Change banner');
-  changeBanner.addEventListener('click', async (e) => { const [img] = await chooseImages(e, null); if (img) { nv.banner = S.link(img); await P.saveSettings(); } });
+  const bY = nv.bannerPosition ?? 60; const bStyle = nv.bannerStyle || 'clear';
+  const setBanner = async (img) => { nv.banner = S.link(img); if (nv.bannerPosition == null) nv.bannerPosition = 60; await P.saveSettings(); };
+  const changeBanner = h('button', {}, bnSrc ? '🖼 Change banner' : '🖼 Add banner');
+  changeBanner.addEventListener('click', async (e) => { const [img] = await chooseImages(e, null); if (img) setBanner(img); });
+  const tools = h('div', { class: 'cs-banner-tools hd-tools' }, changeBanner);
+  if (bnSrc) {
+    const range = h('input', { type: 'range', min: 0, max: 100, value: bY });
+    range.addEventListener('input', () => hero.style.setProperty('--y', range.value + '%'));
+    range.addEventListener('change', async () => { nv.bannerPosition = +range.value; await P.saveSettingsQuiet(); });
+    ap(tools, h('label', { class: 'cs-banner-pos', title: 'Vertical focus' }, '↕', range),
+      h('button', { onclick: async () => { nv.bannerStyle = bStyle === 'blurred' ? 'clear' : 'blurred'; await P.saveSettings(); } }, bStyle === 'blurred' ? '◐ Blurred' : '◑ Clear'),
+      h('button', { title: 'Remove banner', onclick: async () => { nv.banner = ''; await P.saveSettings(); } }, '✕'));
+  }
   const enc = h('button', { class: 'apill is-enc hd-enc', onclick: () => P.openEncyclopedia() }, h('span', {}, '📚'), 'Encyclopedia', h('b', {}, String(S.entries().length)));
-  const hero = h('div', { class: 'hd-hero' + (bnSrc ? '' : ' is-empty'), style: bnSrc ? { '--img': `url("${bnSrc}")` } : { '--cd-hue': String(hashHue(nv.title || 'x')) } }, h('div', { class: 'bg' }),
-    h('div', { class: 'cs-banner-tools hd-tools' }, changeBanner, nv.banner ? h('button', { onclick: async () => { nv.banner = ''; await P.saveSettings(); } }, '✕') : null),
+  const hero = h('div', { class: 'hd-hero' + (bnSrc ? ' is-' + bStyle : ' is-empty'), style: bnSrc ? { '--img': `url("${bnSrc}")`, '--y': bY + '%' } : { '--cd-hue': String(hashHue(nv.title || 'x')) } }, h('div', { class: 'bg' }), tools,
     h('div', {}, nv.series ? h('div', { class: 'hd-series' }, nv.series) : null, h('h1', {}, nv.title || 'Untitled novel'),
       h('div', { class: 'sub' }, h('span', { class: 'cs-badge' }, nv.stage || 'Drafting'), dl ? h('span', {}, `Due ${dl.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`) : h('span', {}, 'No deadline set'), daysLeft != null ? h('span', {}, '·') : null, daysLeft != null ? h('span', {}, `${daysLeft} days left`) : null)),
     h('div', { class: 'hd-side' }, h('div', { class: 'ring', style: { '--p': String(pct) } }, h('div', {}, h('b', {}, pct + '%'), h('small', {}, 'of goal'))), enc));
-  dropImages(hero, null, async ([img]) => { nv.banner = S.link(img); await P.saveSettings(); });
+  dropImages(hero, null, ([img]) => setBanner(img));
   ap(root, hero);
 
   /* KPIs */
@@ -240,24 +211,24 @@ async function renderHome(state) {
   const pwCard = h('div', { class: 'card' });
   if (usePW) {
     const tot = Math.max(1, pw.scenes);
-    const novelSel = h('select', { class: 'dropdown wk-sm' }, h('option', { value: '' }, 'All novels'), ...pw.novels.map((n) => h('option', { selected: n === pwc.novel }, n)));
+    const novelSel = h('select', { class: 'dropdown wk-sm' }, ...pwx.data.novels.map((n) => h('option', { value: n.title, selected: novelPW && n.id === novelPW.id }, n.title)));
     novelSel.addEventListener('change', async () => { pwc.novel = novelSel.value; await P.saveSettings(); });
     const maxCh = Math.max(1, ...pw.chapters.map((c) => c.words));
-    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill ok' }, `connected${pw.version ? ' · v' + pw.version : ''}`), h('span', { class: 'sp' }), pw.novels.length ? novelSel : null,
-      h('button', { class: 'wk-sm', onclick: () => app().commands?.executeCommandById?.('plot-weaver:open-board') || toast('Open Plot Weaver from its ribbon icon') }, 'Open board ↗')),
+    const openBoard = () => { if (!app().commands?.executeCommandById?.(`${PW_ID}:open-board`)) toast('Enable Plot Weaver to open its board'); };
+    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill ' + (pwx.enabled ? 'ok' : 'warn') }, (pwx.enabled ? 'connected' : 'saved data · plugin disabled') + (pwx.version ? ' · v' + pwx.version : '')), h('span', { class: 'sp' }), pwx.data.novels.length > 1 ? novelSel : null,
+      h('button', { class: 'wk-sm', onclick: openBoard }, 'Open board ↗')),
     pw.scenes ? [
-      h('div', { class: 'pw-status' }, ...PW_STATUS.map((x) => h('i', { style: { width: ((pw.statuses[x.k] || 0) / tot) * 100 + '%', background: x.c }, title: `${x.k}: ${pw.statuses[x.k] || 0} scenes` }))),
-      h('div', { class: 'pw-legend' }, ...PW_STATUS.map((x) => h('span', {}, h('i', { style: { background: x.c } }), `${x.k} · ${pw.statuses[x.k] || 0}`))),
-      h('div', { class: 'pw-mini' }, h('div', {}, h('b', {}, String(pw.scenes)), 'scenes'), h('div', {}, h('b', {}, String(pw.plotlines)), 'plotlines'), h('div', {}, h('b', {}, pw.influences == null ? '—' : String(pw.influences)), 'cause → effect links'), h('div', {}, h('b', {}, pw.offscreen == null ? '—' : String(pw.offscreen)), 'off-screen events')),
-      groupTitle('Chapters'),
-      h('div', { class: 'bars' }, ...pw.chapters.map((c) => h('div', { class: 'bar' }, h('span', { class: 'l', title: c.status }, c.name), h('span', { class: 't' }, h('i', { style: { width: (c.words / maxCh) * 100 + '%', background: (PW_STATUS.find((x) => x.k === c.status) || PW_STATUS[3]).c } })), h('span', { class: 'n' }, c.words ? fmtN(c.words) : '—')))),
-      pw.pov.length ? [groupTitle('Scenes per POV'), h('div', { class: 'bars' }, ...pw.pov.map(([c, k]) => { const cf = S.resolve(c, ''); const a = h('a', { class: 'l wk-link' }, c); a.addEventListener('click', (e) => (cf ? openFile(cf, e) : openName(c, '', e))); return h('div', { class: 'bar' }, a, h('span', { class: 't' }, h('i', { style: { width: (k / pw.pov[0][1]) * 100 + '%', background: 'var(--cs-accent)' } })), h('span', { class: 'n' }, k + ' scenes')); }))] : null,
-    ] : empty('No scene notes found yet. Plot Weaver scenes need a linked note with word-count and status properties.'),
-    h('div', { class: 'cs-hint cs-mt' }, `Word counts and status come from scene notes’ “${pwc.wordsKey}” and “${pwc.statusKey}” properties, the same ones Plot Weaver uses.`));
+      h('div', { class: 'pw-status' }, ...pw.buckets.map((x) => h('i', { style: { width: (x.count / tot) * 100 + '%', background: x.color }, title: `${x.label}: ${x.count} scenes` }))),
+      h('div', { class: 'pw-legend' }, ...pw.buckets.map((x) => h('span', {}, h('i', { style: { background: x.color } }), `${x.label} · ${x.count}`))),
+      h('div', { class: 'pw-mini' }, h('div', {}, h('b', {}, String(pw.scenes)), `scenes · ${pw.withNote} with notes`), h('div', {}, h('b', {}, String(pw.plotlines)), 'plotlines'), h('div', {}, h('b', {}, String(pw.influences)), 'cause → effect links'), h('div', {}, h('b', {}, String(pw.offscreen)), 'off-screen events')),
+      pw.chapters.length ? [groupTitle('Chapters'), h('div', { class: 'bars' }, ...pw.chapters.map((c) => h('div', { class: 'bar' }, h('span', { class: 'l', title: `${c.scenes} scenes${c.status ? ' · least progressed: ' + c.status : ''}` }, c.name), h('span', { class: 't' }, h('i', { style: { width: (c.words / maxCh) * 100 + '%', background: c.color } })), h('span', { class: 'n' }, c.words ? fmtN(c.words) : c.scenes ? c.scenes + ' sc.' : '—'))))] : null,
+      pw.pov.length ? [groupTitle('Scenes per POV'), h('div', { class: 'bars' }, ...pw.pov.map(([c, k]) => { const cf = charForPov(c) || S.resolve(c, ''); const a = h('a', { class: 'l wk-link', title: cf ? cf.basename : '' }, c); a.addEventListener('click', (e) => (cf ? openFile(cf, e) : toast(`No note called “${c}”. Create a character with that name to link it`))); return h('div', { class: 'bar' }, a, h('span', { class: 't' }, h('i', { style: { width: (k / pw.pov[0][1]) * 100 + '%', background: 'var(--cs-accent)' } })), h('span', { class: 'n' }, k + ' scenes')); }))] : null,
+    ] : empty(novelPW ? `“${novelPW.title}” has no scenes on the board yet.` : 'No novels in Plot Weaver yet.'),
+    h('div', { class: 'cs-hint cs-mt' }, `Read from Plot Weaver’s cards. Status and words come from each card’s linked note, using Plot Weaver’s fields: “${pwx.settings.statusField}” and “${pwx.settings.wordsField}”.`));
   } else {
     const manual = h('input', { type: 'number', value: nv.manualWords || 0, class: 'wk-num' }); manual.addEventListener('change', async () => { nv.manualWords = +manual.value; await P.saveSettings(); });
-    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill warn' }, pw.installed ? (pw.enabled ? 'turned off in settings' : 'installed but disabled') : 'not installed')),
-      h('p', { class: 'cs-hint' }, pw.installed ? 'Turn on the integration in Worldkeeper settings → Novel & Plot Weaver to pull in chapter, scene and POV stats.' : 'Install Plot Weaver to pull chapter, scene and POV stats in here. Until then, track words by hand:'),
+    ap(pwCard, h('div', { class: 'card-h' }, h('h3', {}, '🧵 Plot Weaver'), h('span', { class: 'pill warn' }, !pwx.installed ? 'not installed' : !pwc.enabled ? 'turned off in settings' : 'no outline saved yet')),
+      h('p', { class: 'cs-hint' }, !pwx.installed ? 'Install Plot Weaver to pull chapter, scene and POV stats in here. Until then, track words by hand:' : !pwc.enabled ? 'Turn on the integration in Worldkeeper settings → Novel & Plot Weaver.' : 'Open Plot Weaver and add some cards; stats appear here once it has saved an outline. Meanwhile, track words by hand:'),
       h('div', { class: 'wk-row' }, manual, h('span', { class: 'cs-hint' }, 'words written')));
   }
   const max = Math.max(1, ...activity);
