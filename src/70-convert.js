@@ -76,7 +76,7 @@ async function convertFiles(files, id, mapping, opts) {
     await S.write(f, (fm) => { for (const k of Object.keys(fm)) delete fm[k]; Object.assign(fm, res.fm); });
     // move the note's existing text into its first text tab (a hidden wk-tab callout), leaving the body clean
     const firstTab = T()[id].body[0] && T()[id].body[0].heading;
-    await app().vault.process(f, (txt) => {
+    await processNote(f, (txt) => {
       const m = txt.match(/^---\n[\s\S]*?\n---\n?/); const head = m ? m[0] : ''; let body = txt.slice(head.length);
       const rest = body.replace(/```worldkeeper\s*\n```\s*\n?/, '').trim();
       if (opts.body && firstTab && rest && !TAB_HEAD_RE.test(rest.split('\n')[0])) return head + '```worldkeeper\n```\n\n' + encodeTab(firstTab, rest);

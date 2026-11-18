@@ -2,6 +2,30 @@
    store: read frontmatter through Obsidian's metadata cache, write through
    processFrontMatter, and keep an index of types / hierarchy / backlinks.
    ===================================================================== */
+/** wait for Obsidian to re-read a note's metadata (or give up after a moment) */
+function afterMeta(f, ms = 1500) {
+  return new Promise((res) => { const mc = app().metadataCache; let t = null; const ref = mc.on('changed', (x) => { if (x && x.path === f.path) { mc.offref(ref); clearTimeout(t); setTimeout(res, 0); } }); t = setTimeout(() => { mc.offref(ref); res(); }, ms); });
+}
+/** the editor showing this note in Source / Live Preview, if any */
+function openEditorFor(f) {
+  let view = null;
+  app().workspace.iterateAllLeaves((l) => { const v = l.view; if (!view && v && v.file && v.file.path === f.path && v.editor && typeof v.getMode === 'function' && v.getMode() === 'source') view = v; });
+  return view;
+}
+/** current text of a note, from its open editor when there is one (the editor may be ahead of the file on disk) */
+async function readNote(f) { const v = openEditorFor(f); return v ? v.editor.getValue() : app().vault.read(f); }
+/** change a note's text. When the note is open in an editor the change goes through that editor,
+    so the editor never saves an older copy over it. Only the changed part is replaced. */
+async function processNote(f, fn) {
+  const v = openEditorFor(f);
+  if (!v) return app().vault.process(f, fn);
+  const ed = v.editor; const old = ed.getValue(); const nw = fn(old); if (nw === old) return nw;
+  let a = 0; while (a < old.length && a < nw.length && old[a] === nw[a]) a++;
+  let b = 0; while (b < old.length - a && b < nw.length - a && old[old.length - 1 - b] === nw[nw.length - 1 - b]) b++;
+  ed.replaceRange(nw.slice(a, nw.length - b), ed.offsetToPos(a), ed.offsetToPos(old.length - b));
+  if (typeof v.save === 'function') await v.save(); else if (typeof v.requestSave === 'function') v.requestSave();
+  return nw;
+}
 const S = {
   _idx: null,
   dirty() { this._idx = null; },

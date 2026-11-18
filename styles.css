@@ -1150,7 +1150,15 @@
 .wk .wk-legacy {margin-bottom: 12px;}
 /* text-tab blocks live in the note body but are shown only inside their sheet tab (intentionally unscoped) */
 .callout[data-callout="wk-tab"] {display: none !important;}
-.markdown-source-view.mod-cm6 .cm-embed-block:has(> .callout[data-callout="wk-tab"]) {display: none !important;}
+/* In the editor (Live Preview) a tab block shows as one slim, muted line instead of nothing,
+   so it can't be selected and deleted by accident along with nearby text. Its text stays hidden. */
+.markdown-source-view.mod-cm6 .callout[data-callout="wk-tab"] {display: flex !important; flex-direction: column; margin: 2px 0 !important; padding: 2px 10px !important; background: transparent !important; border: 1px dashed var(--background-modifier-border) !important; border-radius: 6px; mix-blend-mode: normal; --callout-icon: lucide-panel-top;}
+.markdown-source-view.mod-cm6 .callout[data-callout="wk-tab"] .callout-content {display: none !important;}
+.markdown-source-view.mod-cm6 .callout[data-callout="wk-tab"] .callout-title {font-size: .78em; font-weight: 500; color: var(--text-faint); gap: 6px; padding: 0;}
+.markdown-source-view.mod-cm6 .callout[data-callout="wk-tab"] .callout-title-inner::after {content: " · Worldkeeper tab (edit it in the sheet)"; font-weight: 400;}
+.markdown-source-view.mod-cm6 .callout[data-callout="wk-tab"] .callout-icon {color: var(--text-faint);}
+.markdown-source-view.mod-cm6 .cm-embed-block:has(> .callout[data-callout="wk-tab"]) .edit-block-button {display: none;}
+.wk .wk-legacy-btns {display: flex; gap: 6px; flex-wrap: wrap;}
 /* 0.1.7: text tabs use the full width of the sheet */
 .wk .cs-panel .cs-section-md {max-width: none !important; width: 100%;}
 .wk .cs-panel .cs-text-edit {display: block; width: 100% !important; max-width: none !important; min-width: 0; box-sizing: border-box; field-sizing: fixed;}
@@ -1193,3 +1201,10 @@
 .wk .enc-flash {animation: wk-flash 1.2s ease;}
 @keyframes wk-flash {0%, 40% {background: color-mix(in srgb, var(--cs-accent) 25%, transparent);} 100% {background: transparent;}}
 @media (max-width: 900px) {.wk .enc-body.has-toc {grid-template-columns: minmax(0, 1fr);} .wk .enc-toc {position: static; order: -1;}}
+/* links between notes: white text so they stand out (dark themes); light themes use the normal text color */
+body.theme-dark .wk {--wk-link: #ffffff;}
+body.theme-light .wk {--wk-link: var(--text-normal);}
+.wk .cs-root .cs-chip:not(.is-unresolved), .wk .wk-link:not(.unres), .wk .wk-bar a, .wk .cd-loc,
+.wk a.internal-link:not(.is-unresolved), .wk .markdown-rendered a.internal-link:not(.is-unresolved) {color: var(--wk-link, var(--text-normal)) !important;}
+.wk .markdown-rendered a.internal-link:not(.is-unresolved) {text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--cs-accent, var(--interactive-accent)) 70%, transparent); text-underline-offset: 2px;}
+.wk .markdown-rendered a.internal-link:not(.is-unresolved):hover {text-decoration-color: currentColor;}

@@ -299,7 +299,7 @@ async function setNoteTask(t, { done, text } = {}) {
     });
     return;
   }
-  await app().vault.process(t.file, (txt) => {
+  await processNote(t.file, (txt) => {
     const ls = txt.split('\n'); const m = (ls[t.line] || '').match(/^((?:\s*>)*\s*(?:[-*+]|\d+[.)])\s+\[)(.)(\]\s?)(.*)$/); if (!m) return txt;
     const mark = done === undefined ? m[2] : done ? 'x' : ' ';
     let body = m[4];

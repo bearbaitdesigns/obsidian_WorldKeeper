@@ -15,9 +15,10 @@ function entryRelated(f) {
   return S.entries().filter((o) => o.path !== f.path).map((o) => [o, S.linkFiles(o, 'links').filter((l) => mine.has(l.path))]).filter(([, sh]) => sh.length);
 }
 /** links panel + see also + related (used in the view and in the entry note's code block) */
-function renderEntryMeta(f, { inView = false } = {}) {
-  const s = ST(); const fm = S.fm(f); const W = (fn) => S.write(f, fn);
-  const wrap = h('div', { class: 'enc-metawrap' });
+function renderEntryMeta(f, opts = {}) {
+  const s = ST(); const fm = S.fm(f); const wrap = h('div', { class: 'enc-metawrap' });
+  // save, wait for Obsidian to re-read the note, then redraw this panel in place (no need to reopen the entry)
+  const W = async (fn) => { const ready = afterMeta(f); await S.write(f, fn); await ready; if (wrap.isConnected) wrap.replaceWith(renderEntryMeta(f, opts)); };
   const catSel = h('select', { class: 'dropdown wk-sm' }, ...s.encCategories.map((c) => h('option', { selected: fm.category === c }, c)), fm.category && !s.encCategories.includes(fm.category) ? h('option', { selected: true }, fm.category) : null);
   catSel.addEventListener('change', () => W((x) => { x.category = catSel.value; }));
   ap(wrap, h('div', { class: 'enc-meta' }, catSel, ...arr(fm.tags).map((t, i) => h('span', { class: 'cs-chip is-plain' }, '#' + t, h('span', { class: 'cs-x', onclick: () => W((x) => { x.tags = arr(x.tags).filter((_, j) => j !== i); }) }, '✕'))),
@@ -41,14 +42,14 @@ function renderEntryMeta(f, { inView = false } = {}) {
   return wrap;
 }
 function renderEntryFoot(f, open) {
-  const fm = S.fm(f); const W = (fn) => S.write(f, fn);
+  let foot = null; const W = async (fn) => { const ready = afterMeta(f); await S.write(f, fn); await ready; if (foot && foot.isConnected) foot.replaceWith(renderEntryFoot(f, open)); };
   const rel = entryRelated(f);
   const see = h('div', { class: 'cs-tile-body' }, ...S.links(f, 'seeAlso').map((l, i) => chip(l.name, f.path, { file: l.file, label: '📚 ' + display(l.name), onX: () => W((x) => { x.seeAlso = arr(x.seeAlso).filter((_, j) => j !== i); }) })),
     h('button', { class: 'cs-add', onclick: () => { const sel = S.linkFiles(f, 'seeAlso').map((x) => x.path); let next = sel;
       suggest({ items: S.entries().filter((o) => o.path !== f.path).map((o) => ({ label: o.basename, sub: S.fm(o).category || '', value: o.path })), selected: sel, toggle: true, placeholder: 'Pick entries… (esc when done)', onPick: (v) => { next = v; } });
       const obs = new MutationObserver(() => { if (!document.querySelector('.wk-modal-bg')) { obs.disconnect(); if (next.join('|') !== sel.join('|')) W((x) => { x.seeAlso = next.map((p) => S.link(app().vault.getAbstractFileByPath(p), f.path)); }); } });
       obs.observe(document.body, { childList: true }); } }, '+'));
-  return h('div', { class: 'enc-foot' },
+  return foot = h('div', { class: 'enc-foot' },
     h('div', {}, groupTitle('See also'), see),
     h('div', {}, h('div', { class: 'cs-group-title' }, 'Related entries', h('span', { class: 'enc-note' }, 'share a linked element')),
       rel.length ? h('div', { class: 'wk-bars' }, ...rel.map(([o, sh]) => { const a = h('a', { class: 'wk-link' }, o.basename); a.addEventListener('click', (e) => open(o, e)); return h('div', { class: 'enc-rel' }, a, h('span', { class: 'cs-hint' }, sh.map((x) => x.basename).join(', '))); })) : h('div', { class: 'cs-hint' }, 'None yet.')));
@@ -95,7 +96,7 @@ class EncyclopediaView extends ItemView {
   renderEditor(f, text) {
     const ta = h('textarea', { class: 'cs-text-edit enc-edit', placeholder: 'Write the entry… Markdown works: ## headings, - lists, **bold**, [[links]].' }, text);
     let t = null; let saved = text; let closing = false;
-    const write = async (v) => { await app().vault.process(f, (txt) => { const m = txt.match(/^---\n[\s\S]*?\n---\n?/); const head = m ? m[0] : ''; return head + '```worldkeeper-entry\n```\n\n' + v.replace(/\s+$/, '') + '\n'; }); };
+    const write = async (v) => { await processNote(f, (txt) => { const m = txt.match(/^---\n[\s\S]*?\n---\n?/); const head = m ? m[0] : ''; return head + '```worldkeeper-entry\n```\n\n' + v.replace(/\s+$/, '') + '\n'; }); };
     const flush = async () => { clearTimeout(t); if (ta.value !== saved) { saved = ta.value; await write(ta.value); } };
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(320, ta.scrollHeight + 4) + 'px'; };
     const done = async () => { if (closing) return; closing = true; this.editing = null; await flush(); ta.blur(); this.run(); };

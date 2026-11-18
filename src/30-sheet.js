@@ -198,9 +198,9 @@ function insertTabBlock(txt, enc) {
   if (m) { const at = m.index + m[0].length; return (txt.slice(0, at) + '\n' + enc + '\n' + txt.slice(at).replace(/^\n+/, '')).replace(/\n{3,}/g, '\n\n'); }
   return txt.replace(/\s*$/, '') + '\n\n' + enc;
 }
-async function readTab(f, heading) { const b = parseTabs(await app().vault.cachedRead(f)).get(String(heading).trim().toLowerCase()); return b ? b.text : ''; }
+async function readTab(f, heading) { const b = parseTabs(await readNote(f)).get(String(heading).trim().toLowerCase()); return b ? b.text : ''; }
 async function writeTab(f, heading, text) {
-  await app().vault.process(f, (txt) => {
+  await processNote(f, (txt) => {
     const b = parseTabs(txt).get(String(heading).trim().toLowerCase()); const v = String(text || '').replace(/\s+$/, '');
     const enc = v.trim() ? encodeTab(String(heading).trim(), v) : '';
     if (b) return (txt.slice(0, b.start) + enc + txt.slice(b.end)).replace(/\n{3,}/g, '\n\n');
@@ -218,7 +218,7 @@ async function headingSection(f, heading) {
 }
 async function moveHeadingIntoTab(f, heading) {
   let moved = false;
-  await app().vault.process(f, (txt) => {
+  await processNote(f, (txt) => {
     const re = new RegExp(`^#{1,6}\\s+${String(heading).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'mi'); const m = re.exec(txt); if (!m) return txt;
     const after = txt.slice(m.index + m[0].length); const nx = after.search(/^(#{1,6}\s|>\s*\[!wk-tab\])/mi); const end = nx < 0 ? txt.length : m.index + m[0].length + nx;
     const sec = txt.slice(m.index + m[0].length, end).trim(); let out = (txt.slice(0, m.index).replace(/\s*$/, '\n') + txt.slice(end)).replace(/\n{3,}/g, '\n\n');
@@ -228,12 +228,24 @@ async function moveHeadingIntoTab(f, heading) {
   });
   return moved;
 }
+/** delete an old "## heading" section (heading + its text) from the note body; tab blocks are never touched */
+async function removeHeadingSection(f, heading) {
+  let removed = false;
+  await processNote(f, (txt) => {
+    const re = new RegExp(`^#{1,6}\\s+${String(heading).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`, 'mi'); const m = re.exec(txt); if (!m) return txt;
+    const after = txt.slice(m.index + m[0].length); const nx = after.search(/^(#{1,6}\s|>\s*\[!wk-tab\])/mi); const end = nx < 0 ? txt.length : m.index + m[0].length + nx;
+    removed = true; return (txt.slice(0, m.index).replace(/\s*$/, '\n') + '\n' + txt.slice(end)).replace(/\n{3,}/g, '\n\n');
+  });
+  return removed;
+}
 async function renderTextTab(panel, f, heading, comp) {
   const text = await readTab(f, heading); const key = String(heading).trim();
   const st = P.mem(f.path, 'edit:' + key, { editing: false });
   const legacy = await headingSection(f, heading);
   if (legacy && legacy.body) ap(panel, h('div', { class: 'cv-callout wk-legacy' }, h('div', {}, h('b', {}, `This note has text under a “## ${heading}” heading.`), h('div', { class: 'cs-hint' }, 'Move it into this tab so it lives here instead of under a heading.')),
-    h('button', { class: 'mod-cta', onclick: async () => { await moveHeadingIntoTab(f, heading); toast(`Moved “${heading}” into its tab`); } }, 'Move into tab')));
+    h('div', { class: 'wk-legacy-btns' },
+      h('button', { class: 'mod-cta', onclick: async () => { await moveHeadingIntoTab(f, heading); toast(`Moved “${heading}” into its tab`); wkRerender(panel); } }, 'Move into tab'),
+      h('button', { onclick: () => confirm2(`Delete the old “${heading}” section?`, h('p', {}, `Removes the “## ${heading}” heading and the text under it from the note. What you wrote in this tab is kept.`), async () => { await removeHeadingSection(f, heading); toast(`Deleted the old “${heading}” section`); wkRerender(panel); }, 'Delete old section') }, 'Delete old section'))));
   if (st.editing) {
     const ta = h('textarea', { class: 'cs-text-edit', placeholder: `Write ${heading.toLowerCase()}… Markdown and [[links]] work.` }, text);
     let t = null; let saved = text;
