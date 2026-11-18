@@ -179,10 +179,11 @@ async function renderHome(state) {
       h('button', { title: 'Remove banner', onclick: async () => { nv.banner = ''; await P.saveSettings(); } }, '✕'));
   }
   const enc = h('button', { class: 'apill is-enc hd-enc', onclick: () => P.openEncyclopedia() }, h('span', {}, '📚'), 'Encyclopedia', h('b', {}, String(S.entries().length)));
+  const atlas = h('button', { class: 'apill is-enc hd-enc', title: 'Open the Worldkeeper dashboards', onclick: () => P.openDashboards() }, h('span', {}, '🗺️'), 'World Atlas', h('b', {}, String(S.ix().type.size)));
   const hero = h('div', { class: 'hd-hero' + (bnSrc ? ' is-' + bStyle : ' is-empty'), style: bnSrc ? { '--img': `url("${bnSrc}")`, '--y': bY + '%' } : { '--cd-hue': String(hashHue(nv.title || 'x')) } }, h('div', { class: 'bg' }), tools,
     h('div', {}, nv.series ? h('div', { class: 'hd-series' }, nv.series) : null, h('h1', {}, nv.title || 'Untitled novel'),
       h('div', { class: 'sub' }, h('span', { class: 'cs-badge' }, nv.stage || 'Drafting'), dl ? h('span', {}, `Due ${dl.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`) : h('span', {}, 'No deadline set'), daysLeft != null ? h('span', {}, '·') : null, daysLeft != null ? h('span', {}, `${daysLeft} days left`) : null)),
-    h('div', { class: 'hd-side' }, h('div', { class: 'wk-ring', style: { '--p': String(pct) } }, h('div', {}, h('b', {}, pct + '%'), h('small', {}, 'of goal'))), enc));
+    h('div', { class: 'hd-side' }, h('div', { class: 'wk-ring', style: { '--p': String(pct) } }, h('div', {}, h('b', {}, pct + '%'), h('small', {}, 'of goal'))), h('div', { class: 'hd-pills' }, enc, atlas)));
   dropImages(hero, null, ([img]) => setBanner(img));
   ap(root, hero);
 
@@ -195,10 +196,6 @@ async function renderHome(state) {
     h('div', { class: 'wk-kpi' }, h('span', {}, 'Today'), h('b', {}, fmtN(activity[activity.length - 1])), h('small', {}, `avg ${fmtN(avg)}/day (14d)`)),
     h('div', { class: 'wk-kpi' }, h('span', {}, 'Streak'), h('b', {}, streak + ' days'), h('small', {}, 'days with new words'))));
 
-  /* atlas pills */
-  ap(root, h('div', { class: 'atlas-pills' }, ...Object.keys(T()).sort((a, b) => (TYPE_ORDER.indexOf(a) + 1 || 99) - (TYPE_ORDER.indexOf(b) + 1 || 99)).map((t) => h('button', { class: 'apill', onclick: () => P.openDashboards(t) }, h('span', {}, T()[t].icon), T()[t].plural, h('b', {}, String(S.notesOf(t).length))))));
-
-  /* summary + todo */
   const colL = h('div', { class: 'hd-col' }), colR = h('div', { class: 'hd-col' });
   ap(root, h('div', { class: 'hd-twocol' }, colL, colR));
   ap(colL, renderSummary(state)); ap(colR, await renderTodos(state));
@@ -237,22 +234,11 @@ async function renderHome(state) {
       h('div', { class: 'cs-tile-body' }, ...S.notesOf(t).map((n) => chip(n.path, '', { file: n, label: n.basename })))))));
   return root;
 }
-/** the book cover: click to upload or choose, drop an image on it, ✕ to remove */
-function renderCover() {
-  const nv = ST().novel; const src = S.imageSrc(nv.cover, '');
-  const setCover = async (img) => { nv.cover = S.link(img); await P.saveSettings(); };
-  const box = h('div', { class: 'sm-cover' + (src ? '' : ' is-empty'), title: src ? 'Change cover' : 'Add a cover' },
-    src ? h('img', { src, alt: `${nv.title || 'Book'} cover` }) : [h('span', { class: 'sm-cover-plus' }, '＋'), h('span', {}, 'Add cover')],
-    src ? h('span', { class: 'cs-avatar-x', title: 'Remove cover', onclick: async (e) => { e.stopPropagation(); nv.cover = ''; await P.saveSettings(); } }, '✕') : null);
-  box.addEventListener('click', async (e) => { const [img] = await chooseImages(e, null); if (img) setCover(img); });
-  dropImages(box, null, ([img]) => setCover(img));
-  return box;
-}
 function renderSummary(state) {
   const nv = ST().novel; const card = h('div', { class: 'wk-card sm-card' });
   ap(card, h('div', { class: 'card-h' }, h('h3', {}, '📘 About the book'), h('span', { class: 'sp' }), h('button', { class: 'wk-sm', onclick: () => { state.summaryEdit = !state.summaryEdit; state.rerender(); } }, state.summaryEdit ? '✓ Done' : '✎ Edit')));
   const main = h('div', { class: 'sm-main' });
-  ap(card, h('div', { class: 'sm-wrap' }, renderCover(), main));
+  ap(card, main);
   if (state.summaryEdit) {
     const f = (label, el) => h('div', { class: 'cl-row' }, h('label', {}, label), el);
     const ta = (k, rows) => { const e = h('textarea', { class: 'sm-in', rows }, nv[k] || ''); e.addEventListener('change', () => { nv[k] = e.value; P.saveSettingsQuiet(); }); return e; };

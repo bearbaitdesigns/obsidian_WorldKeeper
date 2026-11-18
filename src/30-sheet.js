@@ -98,7 +98,7 @@ async function renderSheet(f, id, comp) {
   const count = (x) => x.lf ? names(fm[x.lf.key]).length : x.id === 'details' ? Object.keys(fm[s.detailsKey] || {}).length : x.mod === 'relationships' ? arr(fm[s.relationshipKey]).length
     : x.mod === 'linked' ? S.backlinks(f).length : x.mod === 'contains' ? S.descendants(f).length : x.mod === 'rules' ? arr(fm.rules).length : x.mod === 'spellbook' ? arr(fm.spells).length
       : x.mod === 'conlang' ? arr(fm.lexicon).length : x.mod === 'gods' ? arr(fm.gods).length : x.mod === 'worship' ? worshipOf(f).length : x.mod === 'scenes' ? pwCards.length : typeof x.mod === 'object' ? S.refsOf(f, x.mod).length : 0;
-  ap(root, h('div', { class: 'cs-tabs' }, ...TB.map((x) => { const c = count(x); return h('button', { class: 'cs-tab' + (x.id === act ? ' is-active' : ''), onclick: () => { P.tabState.set(f.path, x.id); P.refreshSoon(0); } }, h('span', { class: 'cs-tab-icon' }, x.icon), h('span', {}, x.label), c ? h('span', { class: 'cs-tab-count' }, String(c)) : null); })));
+  ap(root, h('div', { class: 'cs-tabs' }, ...TB.map((x) => { const c = count(x); return h('button', { class: 'cs-tab' + (x.id === act ? ' is-active' : ''), onclick: (e) => { P.tabState.set(f.path, x.id); wkRerender(e.currentTarget); } }, h('span', { class: 'cs-tab-icon' }, x.icon), h('span', {}, x.label), c ? h('span', { class: 'cs-tab-count' }, String(c)) : null); })));
   const panel = h('div', { class: 'cs-panel' }); const x = TB.find((y) => y.id === act);
   if (x.body) await renderTextTab(panel, f, x.body, comp);
   else if (x.id === 'details') ap(panel, renderDetails(f, fm));
@@ -240,7 +240,7 @@ async function renderTextTab(panel, f, heading, comp) {
     const flush = async () => { clearTimeout(t); if (ta.value !== saved) { saved = ta.value; await writeTab(f, heading, ta.value); } };
     const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(180, ta.scrollHeight + 4) + 'px'; };
     let closing = false;
-    const done = async () => { if (closing) return; closing = true; st.editing = false; await flush(); ta.blur(); P.refreshSoon(0); };
+    const done = async () => { if (closing) return; closing = true; st.editing = false; await flush(); wkRerender(ta); ta.blur(); };
     ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(flush, 900); grow(); });
     ta.addEventListener('blur', (e) => { if (e.relatedTarget && e.relatedTarget.classList && e.relatedTarget.classList.contains('wk-done')) return; flush(); });
     ta.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(); } });
@@ -253,7 +253,7 @@ async function renderTextTab(panel, f, heading, comp) {
     setTimeout(() => { grow(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 20);
     return;
   }
-  const edit = () => { st.editing = true; P.refreshSoon(0); };
+  const edit = () => { st.editing = true; wkRerender(panel); };
   ap(panel, h('div', { class: 'cs-section-actions' }, h('button', { onclick: edit }, '✎ Edit')));
   if (!text) { const e = empty(`Nothing here yet. Click to write ${heading.toLowerCase()}.`); e.classList.add('is-clickable'); e.addEventListener('click', edit); ap(panel, e); return; }
   const md = h('div', { class: 'cs-section-md markdown-rendered', title: 'Double-click to edit' }); ap(panel, md);

@@ -1176,3 +1176,10 @@
 .wk .cd-body {padding: 6px 8px 8px; gap: 2px;}
 .wk .cd-meta, .wk .cd-loc {font-size: 0.7em;}
 .wk .cd-card .cd-stat {font-size: 0.66em;}
+/* 0.2.0: Encyclopedia + World Atlas pills under the goal ring */
+.wk .hd-hero .hd-pills {display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;}
+/* 1.0.0: write encyclopedia entries in place */
+.wk .enc-editor {margin-bottom: 8px;}
+.wk .enc-main .enc-edit {min-height: 320px; font-family: var(--font-text, inherit);}
+.wk .enc-md {cursor: text;}
+.wk .enc-title-row button {white-space: nowrap;}

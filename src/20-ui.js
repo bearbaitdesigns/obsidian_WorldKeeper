@@ -159,17 +159,20 @@ const empty = (text) => h('div', { class: 'cs-empty' }, text);
 const groupTitle = (text, count) => h('div', { class: 'cs-group-title' }, text, count != null ? h('span', { class: 'cs-tab-count' }, String(count)) : null);
 
 /* ---------- live refresh plumbing ---------- */
+/** ask the nearest live-rendered container to redraw now (used by clicks inside sheets) */
+function wkRerender(node) { if (node && node.isConnected) node.dispatchEvent(new CustomEvent('wk-rerender', { bubbles: true })); else P.refreshSoon(0); }
 /** re-render `el` via `fn` whenever the vault index changes, without stealing focus while typing */
 function liveRender(component, el, fn) {
   let pending = false;
-  const typing = () => { const a = document.activeElement; if (!a || !el.contains(a)) return false; if (a.tagName === 'TEXTAREA') return true; return a.tagName === 'INPUT' && ['text', 'search', 'number', 'date', 'email', 'url', ''].includes((a.getAttribute('type') || '').toLowerCase()); };
+  const typing = () => { if (el.querySelector('.cs-text-edit')) return true; const a = document.activeElement; if (!a || !el.contains(a)) return false; if (a.tagName === 'TEXTAREA') return true; return a.tagName === 'INPUT' && ['text', 'search', 'number', 'date', 'email', 'url', ''].includes((a.getAttribute('type') || '').toLowerCase()); };
   const run = async (force = true) => {
     if (force !== true && typing()) { pending = true; return; }
     pending = false; const y = el.closest('.view-content, .markdown-preview-view, .cm-scroller')?.scrollTop;
     try { await fn(); } catch (e) { console.error('[Worldkeeper]', e); el.replaceChildren(h('div', { class: 'wk cs-empty' }, 'Worldkeeper hit an error rendering this. See the developer console.')); }
     const sc = el.closest('.view-content, .markdown-preview-view, .cm-scroller'); if (sc && y != null) sc.scrollTop = y;
   };
-  el.addEventListener('focusout', () => { if (pending) setTimeout(run, 50); });
+  el.addEventListener('focusout', () => { if (pending) setTimeout(() => run(false), 50); });
+  el.addEventListener('wk-rerender', (e) => { e.stopPropagation(); setTimeout(() => run(true), 0); });
   component.registerEvent(app().workspace.on(REFRESH, () => run(false)));
   return run;
 }

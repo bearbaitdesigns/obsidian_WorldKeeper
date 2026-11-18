@@ -32,8 +32,8 @@ function renderConlang(f, fm) {
   const lex = arr(fm.lexicon), affixes = arr(fm.affixes);
   const existing = new Set(lex.map((e) => e.word));
   const W = (fn) => S.write(f, (x) => { x.phonology = Object.assign({}, ph, x.phonology || {}); x.lexicon = arr(x.lexicon); x.affixes = arr(x.affixes); fn(x); });
-  const rerender = () => P.refreshSoon(0);
-  const wrap = h('div', {});
+  let wrapRef = null; const rerender = () => wkRerender(wrapRef);
+  const wrap = h('div', {}); wrapRef = wrap;
   const sp = (x) => String(x || '').split(/\s+/).filter(Boolean);
   ap(wrap, h('div', { class: 'cs-stat-row' },
     h('div', { class: 'cs-stat' }, h('b', {}, String(lex.length)), h('span', {}, 'Words')),

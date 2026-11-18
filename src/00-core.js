@@ -149,7 +149,7 @@ const DEFAULT_SETTINGS = {
   divineRanks: ['Elder', 'Greater', 'Lesser', 'Demigod', 'Saint'],
   encCategories: ['History', 'Geography', 'Religion', 'Magic', 'Politics', 'Culture', 'Flora & Fauna', 'Technology', 'Timeline', 'Glossary', 'Miscellany'],
   todoFile: 'Worldkeeper/To-do.md', todoScope: 'all', todoFields: 'To-Do, todo, todos', todoTags: ['Writing', 'Worldbuilding', 'Revision', 'Research', 'Admin'],
-  novel: { title: 'My Novel', series: '', genre: [], pov: '', audience: '', logline: '', synopsis: '', goal: 80000, deadline: '', stage: 'First draft', manualWords: 0, banner: '', bannerPosition: 60, bannerStyle: 'clear', cover: '' },
+  novel: { title: 'My Novel', series: '', genre: [], pov: '', audience: '', logline: '', synopsis: '', goal: 80000, deadline: '', stage: 'First draft', manualWords: 0, banner: '', bannerPosition: 60, bannerStyle: 'clear' },
   plotweaver: { enabled: true, novel: '' },
   history: {},
   types: DEFAULT_TYPES,

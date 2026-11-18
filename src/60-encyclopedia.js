@@ -65,10 +65,29 @@ class EncyclopediaView extends ItemView {
   getIcon() { return 'library'; }
   async onOpen() { this.body = this.contentEl.appendChild(h('div', { class: 'wk wk-view' })); this.run = liveRender(this, this.body, () => this.render()); this.run(); }
   show(f) { this.cur = f ? f.path : this.cur; this.run && this.run(); }
+  /** edit the entry's text right here; saves as you type, Esc or Done to finish */
+  renderEditor(f, text) {
+    const ta = h('textarea', { class: 'cs-text-edit enc-edit', placeholder: 'Write the entry… Markdown works: ## headings, - lists, **bold**, [[links]].' }, text);
+    let t = null; let saved = text; let closing = false;
+    const write = async (v) => { await app().vault.process(f, (txt) => { const m = txt.match(/^---\n[\s\S]*?\n---\n?/); const head = m ? m[0] : ''; return head + '```worldkeeper-entry\n```\n\n' + v.replace(/\s+$/, '') + '\n'; }); };
+    const flush = async () => { clearTimeout(t); if (ta.value !== saved) { saved = ta.value; await write(ta.value); } };
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.max(320, ta.scrollHeight + 4) + 'px'; };
+    const done = async () => { if (closing) return; closing = true; this.editing = null; await flush(); ta.blur(); this.run(); };
+    ta.addEventListener('input', () => { clearTimeout(t); t = setTimeout(flush, 900); grow(); });
+    ta.addEventListener('blur', (e) => { if (e.relatedTarget && e.relatedTarget.classList && e.relatedTarget.classList.contains('wk-done')) return; flush(); });
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); done(); } });
+    ta.addEventListener('input', () => { const pos = ta.selectionStart; if (ta.value.slice(0, pos).endsWith('[[')) suggest({ items: S.files().filter((x) => S.managed(x) || S.isEntry(x)).sort(byName).map((x) => ({ label: x.basename, sub: typeLabel(x), value: x.basename })), placeholder: 'Link a note…', onPick: (n) => { ta.value = ta.value.slice(0, pos) + n + ']]' + ta.value.slice(pos); ta.focus(); ta.setSelectionRange(pos + n.length + 2, pos + n.length + 2); flush(); } }); });
+    const doneBtn = h('button', { class: 'mod-cta wk-done' }, '✓ Done');
+    doneBtn.addEventListener('mousedown', (e) => { e.preventDefault(); done(); });
+    doneBtn.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); done(); } });
+    setTimeout(() => { grow(); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }, 20);
+    return h('div', { class: 'enc-editor' }, h('div', { class: 'cs-section-actions' }, h('span', { class: 'cs-hint' }, 'Saves as you type · Esc to finish · links you type are suggested under “Mentioned but not linked”'), doneBtn), ta);
+  }
   async render() {
     if (this.comp) this.removeChild(this.comp); this.comp = this.addChild(new obsidian.Component());
     const s = ST(), st = this.st; const all = S.entries();
-    let cur = this.cur && app().vault.getAbstractFileByPath(this.cur); if (!(cur instanceof TFile) || !S.isEntry(cur)) cur = all[0] || null; this.cur = cur ? cur.path : null;
+    let cur = this.cur && app().vault.getAbstractFileByPath(this.cur); const fresh = cur instanceof TFile && this.pending === cur.path;
+    if (!(cur instanceof TFile) || !(S.isEntry(cur) || fresh)) cur = all[0] || null; this.cur = cur ? cur.path : null; if (cur && S.isEntry(cur) && this.pending === cur.path) this.pending = null;
     const q = st.q.toLowerCase(); const texts = new Map();
     if (q) for (const f of all) texts.set(f.path, (await app().vault.cachedRead(f)).toLowerCase());
     const list = all.filter((f) => { const fm = S.fm(f); return (!st.cat || fm.category === st.cat) && (!q || f.basename.toLowerCase().includes(q) || (texts.get(f.path) || '').includes(q) || arr(fm.tags).some((t) => String(t).toLowerCase().includes(q)) || names(fm.links).some((l) => l.toLowerCase().includes(q))); });
@@ -76,7 +95,7 @@ class EncyclopediaView extends ItemView {
     search.addEventListener('input', () => { st.q = search.value; const p = search.selectionStart; this.run().then(() => { const i = this.body.querySelector('.enc-side input'); if (i) { i.focus(); i.setSelectionRange(p, p); } }); });
     const side = h('div', { class: 'enc-side' },
       h('div', { class: 'enc-head' }, h('div', { class: 'cd-h1' }, '📚 Encyclopedia'), h('span', { class: 'cd-count' }, String(all.length))),
-      h('button', { class: 'mod-cta enc-new', onclick: () => prompt2('New encyclopedia entry', 'Entry title', async (v) => { const f = await createEntry(v, st.cat || 'Miscellany'); if (f) { this.cur = f.path; setTimeout(() => this.run(), 150); } }) }, '+ New entry'),
+      h('button', { class: 'mod-cta enc-new', onclick: () => prompt2('New encyclopedia entry', 'Entry title', async (v) => { const f = await createEntry(v, st.cat || 'Miscellany'); if (f) { this.cur = f.path; this.pending = f.path; this.editing = f.path; this.run(); } }) }, '+ New entry'),
       search,
       h('div', { class: 'enc-cats' }, h('button', { class: st.cat === '' ? 'is-on' : '', onclick: () => { st.cat = ''; this.run(); } }, 'All'), ...s.encCategories.filter((c) => all.some((f) => S.fm(f).category === c)).map((c) => h('button', { class: st.cat === c ? 'is-on' : '', onclick: () => { st.cat = c; this.run(); } }, c))),
       h('div', { class: 'enc-cats' }, h('button', { class: st.group === 'cat' ? 'is-on' : '', onclick: () => { st.group = 'cat'; this.run(); } }, 'By category'), h('button', { class: st.group === 'az' ? 'is-on' : '', onclick: () => { st.group = 'az'; this.run(); } }, 'A–Z')));
@@ -88,13 +107,19 @@ class EncyclopediaView extends ItemView {
     else {
       ap(main, h('div', { class: 'note-path' }, '📁 ' + cur.path),
         h('div', { class: 'enc-title-row' }, h('h1', { class: 'enc-title' }, cur.basename), h('span', { class: 'sp' }),
-          h('button', { onclick: (e) => openFile(cur, e) }, '✎ Edit note'),
+          this.editing === cur.path ? null : h('button', { class: 'mod-cta', onclick: () => { this.editing = cur.path; this.run(); } }, '✎ Edit'),
+          h('button', { title: 'Open the note itself', onclick: (e) => openFile(cur, e) }, '↗ Open note'),
           h('button', { title: 'Delete entry', onclick: () => confirm2('Delete entry?', `“${cur.basename}” will be moved to the trash.`, async () => { await app().vault.trash(cur, true); this.cur = null; }, 'Delete') }, '🗑')),
         renderEntryMeta(cur, { inView: true }));
-      const md = h('div', { class: 'enc-md markdown-rendered' }); ap(main, md);
       const raw = await app().vault.cachedRead(cur);
       const body = raw.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/```worldkeeper-entry\s*\n```\s*/g, '').trim();
-      if (body) await MarkdownRenderer.render(app(), body, md, cur.path, this.comp); else ap(md, empty('Empty entry. Click “Edit note” to write it.'));
+      if (this.editing === cur.path) ap(main, this.renderEditor(cur, body));
+      else {
+        const md = h('div', { class: 'enc-md markdown-rendered', title: 'Double-click to edit' }); ap(main, md);
+        md.addEventListener('dblclick', (e) => { if (!e.target.closest('a')) { this.editing = cur.path; this.run(); } });
+        if (body) await MarkdownRenderer.render(app(), body, md, cur.path, this.comp);
+        else { const e = empty('Empty entry. Click to start writing.'); e.classList.add('is-clickable'); e.addEventListener('click', () => { this.editing = cur.path; this.run(); }); ap(md, e); }
+      }
       ap(main, renderEntryFoot(cur, (o) => { this.cur = o.path; this.run(); }));
     }
     this.body.replaceChildren(h('div', { class: 'enc' }, side, main));
