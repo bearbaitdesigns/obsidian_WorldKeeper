@@ -57,6 +57,14 @@ class WorldkeeperPlugin extends Plugin {
       menu.addItem((i) => i.setTitle('Convert with Worldkeeper…').setIcon('globe').onClick(() => openConverter([file])));
     }));
 
+    // notes of a Worldkeeper type that have only properties (e.g. made by older versions) get their sheet when opened
+    this.registerEvent(app().workspace.on('file-open', async (file) => {
+      if (!(file instanceof TFile) || file.extension !== 'md' || !S.managed(file)) return;
+      const txt = await app().vault.read(file); const m = txt.match(/^---\n[\s\S]*?\n---\n?/); if (!m || /```worldkeeper\s*\n/.test(txt)) return;
+      // empty notes of any type, and occupation notes (plain notes before Occupation became a template); existing text stays below the sheet
+      const rest = txt.slice(m[0].length); if (rest.trim() && S.typeIdOf(file) !== 'occupation') return;
+      await processNote(file, (t) => { const mm = t.match(/^---\n[\s\S]*?\n---\n?/); if (!mm || /```worldkeeper\s*\n/.test(t)) return t; const r = t.slice(mm[0].length); return mm[0] + '```worldkeeper\n```\n' + (r.trim() ? '\n' + r.replace(/^\n+/, '') : ''); });
+    }));
     const dirty = () => { S.dirty(); this.refreshSoon(); };
     this.registerEvent(app().metadataCache.on('changed', dirty));
     this.registerEvent(app().metadataCache.on('resolved', () => { if (!S._idx) this.refreshSoon(); }));

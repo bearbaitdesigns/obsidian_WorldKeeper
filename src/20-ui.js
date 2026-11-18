@@ -134,12 +134,12 @@ function pencilToggle(key) {
 }
 
 /* ---------- chips & cards ---------- */
-function chip(name, src, { file, onX, cls = '', label, parent } = {}) {
+function chip(name, src, { file, onX, cls = '', label, parent, onMissing } = {}) {
   const f = file || S.resolve(name, src);
-  const c = h('span', { class: 'cs-chip' + (f ? '' : ' is-unresolved') + (cls ? ' ' + cls : ''), title: f ? `[[${display(name)}]] · ${typeLabel(f)}` : `[[${display(name)}]] (no note yet)` },
+  const c = h('span', { class: 'cs-chip' + (f ? '' : ' is-unresolved') + (cls ? ' ' + cls : ''), title: f ? `[[${display(name)}]] · ${typeLabel(f)}` : `[[${display(name)}]] (no note yet${onMissing ? ', click to create it' : ''})` },
     h('span', {}, label || display(name)),
     onX ? h('span', { class: 'cs-x', title: 'Remove', onclick: (e) => { e.stopPropagation(); onX(); } }, '✕') : null);
-  c.addEventListener('click', (e) => (f ? openFile(f, e) : openName(name, src, e)));
+  c.addEventListener('click', (e) => (f ? openFile(f, e) : onMissing ? onMissing(e) : openName(name, src, e)));
   hover(c, name, src, parent);
   return c;
 }

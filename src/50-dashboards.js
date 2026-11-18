@@ -82,7 +82,7 @@ class DashboardsView extends ItemView {
   render() {
     const nav = h('div', { class: 'anav' }, h('button', { onclick: () => P.openHome() }, '🏠 Home'));
     const btn = (t) => h('button', { class: this.type === t ? 'is-on' : '', onclick: () => this.setType(t) }, h('span', {}, T()[t].icon), T()[t].plural, h('span', { class: 'c' }, String(S.notesOf(t).length)));
-    ap(nav, h('div', { class: 'sep' }, 'Story'), btn('character'), h('div', { class: 'sep' }, 'Geography'), ...GEO.map(btn), h('div', { class: 'sep' }, 'Shared'), ...CROSS.map(btn), h('div', { class: 'sep' }, 'Divine & infernal'), ...DIVINE.map(btn), h('div', { class: 'sep' }, 'Things'), btn('item'),
+    ap(nav, h('div', { class: 'sep' }, 'Story'), btn('character'), btn('occupation'), h('div', { class: 'sep' }, 'Geography'), ...GEO.map(btn), h('div', { class: 'sep' }, 'Shared'), ...CROSS.map(btn), h('div', { class: 'sep' }, 'Divine & infernal'), ...DIVINE.map(btn), h('div', { class: 'sep' }, 'Things'), btn('item'),
       ...Object.keys(T()).filter((k) => !TYPE_ORDER.includes(k)).map(btn), h('div', { class: 'sep' }, 'Reference'), h('button', { onclick: () => P.openEncyclopedia() }, h('span', {}, '📚'), 'Encyclopedia', h('span', { class: 'c' }, String(S.entries().length))));
     const st = (this.states[this.type] ??= newDashState());
     const main = h('div', { class: 'atlas-main' });

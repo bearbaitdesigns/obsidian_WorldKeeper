@@ -127,8 +127,24 @@ function linkChips(parent, f, lf, comp, sep) {
   if (lf.chain && vals[0]) { const first = S.resolve(vals[0], f.path); if (first) for (const a of S.ancestors(first)) ap(parent, chip(a.path, '', { file: a, cls: 'is-ancestor', label: a.basename }), h('span', { class: 'cs-sep-char' }, '›')); }
   vals.forEach((v, i) => {
     if (sep && i) ap(parent, h('span', { class: 'cs-sep-char' }, lf.chain ? '·' : sep));
-    ap(parent, chip(v, f.path, { onX: () => S.write(f, (x) => { x[lf.key] = arr(x[lf.key]).filter((_, j) => j !== i); }) }));
+    ap(parent, chip(v, f.path, { onX: () => S.write(f, (x) => { x[lf.key] = arr(x[lf.key]).filter((_, j) => j !== i); }), onMissing: () => createLinkTarget(f, lf, v, i) }));
   });
+  linkifyPlain(f, lf, fm);
+}
+/** a link field value with no note yet: create the note from the field's template and store a real [[link]] */
+async function createLinkTarget(f, lf, name, i) {
+  const tid = lf.targets.find((t) => T()[t]); if (!tid) return openName(name, f.path);
+  const target = await createNote(tid, display(name), lf.where || {}, { open: false }); if (!target) return;
+  toast(`Created ${target.path}`);
+  await S.write(f, (x) => { const l = arr(x[lf.key]); const k = linkName(l[i]) === linkName(name) ? i : l.findIndex((y) => linkName(y) === linkName(name)); if (k >= 0) l[k] = S.link(target, f.path); x[lf.key] = l; });
+}
+/** values typed as plain text ("Blacksmith") that match a note are rewritten as [[links]], so Obsidian treats them as links */
+const LINKIFIED = new Set();
+function linkifyPlain(f, lf, fm) {
+  const vals = arr(fm[lf.key]); const key = f.path + '|' + lf.key;
+  const plain = vals.some((v) => typeof v === 'string' && v.trim() && !/^!?\[\[/.test(v.trim()) && S.resolve(v.trim(), f.path));
+  if (!plain || LINKIFIED.has(key)) return; LINKIFIED.add(key);
+  setTimeout(() => S.write(f, (x) => { x[lf.key] = arr(x[lf.key]).map((v) => { if (typeof v !== 'string' || /^!?\[\[/.test(v.trim())) return v; const t = S.resolve(v.trim(), f.path); return t ? S.link(t, f.path) : v; }); }), 0);
 }
 function openLinkPicker(f, lf) {
   const fm = S.fm(f); const current = names(fm[lf.key]).map((n) => S.resolve(n, f.path)?.path).filter(Boolean);

@@ -73,7 +73,7 @@ const display = (n) => String(n).split('/').pop().replace(/\.md$/, '');
 const GEO = ['planet', 'continent', 'kingdom', 'place', 'hub'];
 const CROSS = ['culture', 'language', 'magic', 'organization', 'species'];
 const DIVINE = ['pantheon', 'demon'];
-const TYPE_ORDER = ['character', ...GEO, ...CROSS, ...DIVINE, 'item'];
+const TYPE_ORDER = ['character', 'occupation', ...GEO, ...CROSS, ...DIVINE, 'item'];
 const L = (key, label, placement, targets, extra = {}) => ({ key, label, placement, targets, ...extra });
 const D = (key, label, values, multi = false) => ({ key, label, values, multi });
 
@@ -85,6 +85,11 @@ const DEFAULT_TYPES = {
       L('connections', 'Organizations', 'tab', ['organization'], { icon: '🛡️' }), L('items', 'Items', 'tab', ['item'], { icon: '🗡️' }), L('languages', 'Languages', 'tab', ['language'], { icon: '🗣️' })],
     body: [{ heading: 'Notes', icon: '✏️' }, { heading: 'Backstory', icon: '📜' }], modules: ['relationships', 'linked'],
     tabOrder: ['Notes', 'Backstory', 'Details', 'Relationships', 'Organizations', 'Items', 'Languages', 'Linked here'] },
+  occupation: { label: 'Occupation', plural: 'Occupations', icon: '💼', typeValue: 'occupation', folder: 'Story/Occupations', nested: 'Story/Occupations', template: '',
+    text: [{ key: 'alias', label: 'Also called' }], domain: [D('field', 'Field', ['Craft', 'Trade', 'Military', 'Scholarly', 'Religious', 'Arcane', 'Criminal', 'Noble', 'Labour', 'Performance', 'Seafaring']), D('standing', 'Standing', ['Revered', 'Respected', 'Common', 'Shunned', 'Outlawed'])],
+    links: [L('regions', 'Common in', 'header', GEO, { icon: '🧭', chain: true }), L('guild', 'Guild', 'tile', ['organization']), L('magic', 'Magic', 'tile', ['magic'])],
+    body: [{ heading: 'Notes', icon: '✏️' }, { heading: 'Duties', icon: '🛠️' }], modules: [{ ref: 'Practitioners', icon: '👥', from: 'character', via: 'occupation' }, 'linked'],
+    tabOrder: ['Notes', 'Duties', 'Practitioners', 'Details', 'Linked here'] },
   planet: { label: 'Planet', plural: 'Planets', icon: '🪐', typeValue: 'planet', folder: '{root}/Planets', nested: '{root}/{path}', parentKey: null, template: '',
     text: [{ key: 'moons', label: 'Moons' }], domain: [D('planetType', 'Type', ['Terrestrial', 'Ocean', 'Desert', 'Ice', 'Gas giant']), D('era', 'Current era', ['Age of Myth', 'Age of Crowns', 'Modern'])],
     links: [], body: [{ heading: 'Notes', icon: '✏️' }, { heading: 'History', icon: '📜' }], modules: ['contains', 'linked'], tabOrder: ['Notes', 'History', 'Contains', 'Details', 'Linked here'] },
