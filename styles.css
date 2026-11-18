@@ -1201,10 +1201,13 @@
 .wk .enc-flash {animation: wk-flash 1.2s ease;}
 @keyframes wk-flash {0%, 40% {background: color-mix(in srgb, var(--cs-accent) 25%, transparent);} 100% {background: transparent;}}
 @media (max-width: 900px) {.wk .enc-body.has-toc {grid-template-columns: minmax(0, 1fr);} .wk .enc-toc {position: static; order: -1;}}
-/* links between notes: white text so they stand out (dark themes); light themes use the normal text color */
-body.theme-dark .wk {--wk-link: #ffffff;}
-body.theme-light .wk {--wk-link: var(--text-normal);}
-.wk .cs-root .cs-chip:not(.is-unresolved), .wk .wk-link:not(.unres), .wk .wk-bar a, .wk .cd-loc,
-.wk a.internal-link:not(.is-unresolved), .wk .markdown-rendered a.internal-link:not(.is-unresolved) {color: var(--wk-link, var(--text-normal)) !important;}
-.wk .markdown-rendered a.internal-link:not(.is-unresolved) {text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--cs-accent, var(--interactive-accent)) 70%, transparent); text-underline-offset: 2px;}
-.wk .markdown-rendered a.internal-link:not(.is-unresolved):hover {text-decoration-color: currentColor;}
+/* links between notes: white text everywhere (Settings → General → White links between notes).
+   Dark themes get white; light themes the normal text colour. A faint accent underline keeps links findable in prose. */
+body.wk-white-links.theme-dark {--link-color: #ffffff; --link-color-hover: #ffffff;}
+body.wk-white-links.theme-light {--link-color: var(--text-normal); --link-color-hover: var(--text-normal);}
+body.wk-white-links .wk {--wk-link: var(--link-color);}
+body.wk-white-links .wk .cs-root .cs-chip:not(.is-unresolved), body.wk-white-links .wk .wk-link:not(.unres), body.wk-white-links .wk .wk-bar a, body.wk-white-links .wk .cd-loc {color: var(--wk-link) !important;}
+body.wk-white-links a.internal-link:not(.is-unresolved), body.wk-white-links .cm-hmd-internal-link .cm-underline {text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--interactive-accent) 70%, transparent); text-underline-offset: 2px;}
+body.wk-white-links a.internal-link:not(.is-unresolved):hover, body.wk-white-links .cm-hmd-internal-link .cm-underline:hover {text-decoration-color: currentColor;}
+/* also when a theme colours links directly instead of through --link-color */
+body.wk-white-links a.internal-link:not(.is-unresolved), body.wk-white-links .cm-hmd-internal-link:not(.is-unresolved), body.wk-white-links .cm-hmd-internal-link .cm-underline {color: var(--link-color) !important;}

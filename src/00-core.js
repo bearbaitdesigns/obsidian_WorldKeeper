@@ -141,7 +141,7 @@ const DEFAULT_TYPES = {
 
 const DEFAULT_SETTINGS = {
   root: 'World', folderMode: 'flat', encFolder: '{root}/Encyclopedia/{category}', entryType: 'entry', templatesFolder: 'Templates',
-  accentColor: '', showTitle: true, defaultBannerStyle: 'clear',
+  accentColor: '', showTitle: true, whiteLinks: true, defaultBannerStyle: 'clear',
   imageKey: 'image', bannerKey: 'banner', galleryKey: 'gallery', detailsKey: 'details', relationshipKey: 'relationships',
   relationshipTypes: ['Ally', 'Rival', 'Enemy', 'Parent', 'Child', 'Sibling', 'Partner', 'Mentor', 'Student', 'Friend', 'Worshipper', 'Master', 'Servant'],
   posList: ['noun', 'verb', 'adj', 'adv', 'pron', 'prep', 'conj', 'particle', 'num'],

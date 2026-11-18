@@ -99,6 +99,7 @@ class WorldkeeperSettingTab extends PluginSettingTab {
       const color = h('input', { type: 'color', value: s.accentColor || '#c8963e' }); color.addEventListener('change', () => { s.accentColor = color.value; save(); });
       ap(root, head('Sheets'), row('Show the name in the banner', 'Turn off if you prefer Obsidian’s inline title only.', toggle(s, 'showTitle')), row('Default banner style', '', bs),
         row('Accent colour', 'Follows your theme unless set', color, btn('Use theme', () => { s.accentColor = ''; redraw(); })),
+        row('White links between notes', 'In dark themes, links to other notes show as white text everywhere: Worldkeeper views and all your notes. Light themes use the normal text colour.', toggle(s, 'whiteLinks', () => P.applyLinkStyle())),
         head('Shared properties'), row('Image property', 'Portrait, emblem or map', txt(s, 'imageKey')), row('Banner property', 'Plus <property>_position and <property>_style', txt(s, 'bannerKey')),
         row('Gallery property', '', txt(s, 'galleryKey')), row('Details property', '', txt(s, 'detailsKey')), row('Relationships property', '', txt(s, 'relationshipKey')),
         head('Encyclopedia'), row('Entry type value', 'Encyclopedia notes have type: <this>', txt(s, 'entryType')), row('Categories', 'One per line', area(() => s.encCategories.join('\n'), (v) => { s.encCategories = v; })),

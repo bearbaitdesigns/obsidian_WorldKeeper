@@ -6,7 +6,7 @@ function parseOptions(src) { const o = {}; for (const line of String(src).split(
 class WorldkeeperPlugin extends Plugin {
   async onload() {
     P = this;
-    this.settings = mergeSettings(await this.loadData());
+    this.settings = mergeSettings(await this.loadData()); this.applyLinkStyle();
     this.tabState = new Map(); this._mem = new Map(); this._t = null;
 
     this.registerHoverLinkSource(HOVER, { display: 'Worldkeeper', defaultMod: true });
@@ -66,7 +66,8 @@ class WorldkeeperPlugin extends Plugin {
 
     this.addSettingTab(new WorldkeeperSettingTab(this));
   }
-  onunload() { clearTimeout(this._t); closeModal(); document.getElementById('wk-file')?.remove(); }
+  applyLinkStyle() { document.body.classList.toggle('wk-white-links', !!(this.settings && this.settings.whiteLinks)); }
+  onunload() { document.body.classList.remove('wk-white-links'); clearTimeout(this._t); closeModal(); document.getElementById('wk-file')?.remove(); }
 
   mem(path, key, init) { const k = path + '::' + key; if (!this._mem.has(k)) this._mem.set(k, init); return this._mem.get(k); }
   refreshSoon(ms = 250) { clearTimeout(this._t); this._t = setTimeout(() => { if (P === this) app().workspace.trigger(REFRESH); }, ms); }
