@@ -48,7 +48,7 @@ function renderTypeDash(id, st, { compact = false } = {}) {
     { const k = S.backlinks(f).length; return `${k} link${k === 1 ? '' : 's'} here`; }
   };
   const sub = (f) => { if (GEO.includes(id)) return S.ancestors(f).map((a) => a.basename).join(' › ') || '—'; if (hdr) return names(S.fm(f)[hdr.key]).map(display).join(', ') || '—'; return ''; };
-  const meta = (f) => { const fm = S.fm(f); return [...t.domain.filter((d) => !d.when).slice(1, 3).map((d) => arr(fm[d.key]).join(', ')), ...t.links.filter((l) => l.placement === 'tile').slice(0, 1).map((l) => display(names(fm[l.key])[0] || ''))].filter(Boolean).join(' · '); };
+  const meta = (f) => { const fm = S.fm(f); return [...t.domain.filter((d) => !d.when).slice(1, 3).map((d) => arr(fm[d.key]).join(', ')), ...[...t.text.filter((x) => x.tile).map((x) => display(names(fm[x.key])[0] || '')), ...t.links.filter((l) => l.placement === 'tile').map((l) => display(names(fm[l.key])[0] || ''))].filter(Boolean).slice(0, 1)].filter(Boolean).join(' · '); };
   if (st.mode === 'cards') {
     ap(root, h('div', { class: 'cd-grid' }, ...list.map((f) => {
       const fm = S.fm(f); const im = S.imageSrc(fm[s.imageKey], f.path) || S.imageSrc(fm[s.bannerKey], f.path); const b = t.domain.find((d) => !d.multi && !d.when);
@@ -58,7 +58,7 @@ function renderTypeDash(id, st, { compact = false } = {}) {
       card.addEventListener('click', (e) => openFile(f, e)); hover(card, f.path, '', card); return card;
     })));
   } else {
-    const cols = [['name', 'Name'], ...t.domain.map((d) => [d.key, d.label]), ...t.links.filter((l) => l.placement !== 'tab').map((l) => [l.key, l.label])];
+    const cols = [['name', 'Name'], ...t.domain.map((d) => [d.key, d.label]), ...t.text.filter((x) => x.tile).map((x) => [x.key, x.label]), ...t.links.filter((l) => l.placement !== 'tab').map((l) => [l.key, l.label])];
     const table = h('table', { class: 'cd-table' }, h('thead', {}, h('tr', {}, ...cols.map(([k, l]) => h('th', { onclick: () => { if (k === 'name' || t.domain.some((d) => d.key === k)) { st.sort = k; rerender(); } } }, l + (st.sort === k ? ' ▾' : ''))))));
     const tb = h('tbody', {});
     for (const f of list) {
@@ -82,7 +82,7 @@ class DashboardsView extends ItemView {
   render() {
     const nav = h('div', { class: 'anav' }, h('button', { onclick: () => P.openHome() }, '🏠 Home'));
     const btn = (t) => h('button', { class: this.type === t ? 'is-on' : '', onclick: () => this.setType(t) }, h('span', {}, T()[t].icon), T()[t].plural, h('span', { class: 'c' }, String(S.notesOf(t).length)));
-    ap(nav, h('div', { class: 'sep' }, 'Story'), btn('character'), btn('occupation'), h('div', { class: 'sep' }, 'Geography'), ...GEO.map(btn), h('div', { class: 'sep' }, 'Shared'), ...CROSS.map(btn), h('div', { class: 'sep' }, 'Divine & infernal'), ...DIVINE.map(btn), h('div', { class: 'sep' }, 'Things'), btn('item'),
+    ap(nav, h('div', { class: 'sep' }, 'Story'), btn('character'), h('div', { class: 'sep' }, 'Geography'), ...GEO.map(btn), h('div', { class: 'sep' }, 'Shared'), ...CROSS.map(btn), h('div', { class: 'sep' }, 'Divine & infernal'), ...DIVINE.map(btn), h('div', { class: 'sep' }, 'Things'), btn('item'),
       ...Object.keys(T()).filter((k) => !TYPE_ORDER.includes(k)).map(btn), h('div', { class: 'sep' }, 'Reference'), h('button', { onclick: () => P.openEncyclopedia() }, h('span', {}, '📚'), 'Encyclopedia', h('span', { class: 'c' }, String(S.entries().length))));
     const st = (this.states[this.type] ??= newDashState());
     const main = h('div', { class: 'atlas-main' });

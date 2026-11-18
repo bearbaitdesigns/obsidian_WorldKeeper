@@ -74,7 +74,6 @@ New and converted notes get the block automatically. Each sheet has:
 | Type | Highlights |
 |---|---|
 | 👤 Character | Location, occupation, species, culture, magic, relationships. Demon characters also get a Demon status tile. |
-| 💼 Occupation | Field, standing, guild, magic, where it is common, and a Practitioners tab listing every character with that occupation. |
 | 🪐 Planet › 🗺️ Continent › 👑 Kingdom › 📍 Place › 🏛️ Hub | Each one is placed inside the level above. A **Contains** tab lists everything inside it, the characters there (including sub-locations) and what's found there. |
 | 🎭 Culture · 🗣️ Language · ✨ Magic · 🛡️ Organization · 🧬 Species | Can belong to any level of geography. |
 | 🗣️ Language | A **Conlang** builder: phonology, a word generator, a lexicon, affixes and grammar, and a word-by-word translator that can make up new words for ones it doesn't know. |

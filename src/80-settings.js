@@ -61,7 +61,7 @@ class WorldkeeperSettingTab extends PluginSettingTab {
       });
       ap(root, btn('+ Add link field', () => { t.links.push(L('newLink', 'New link', 'tile', ['character'])); redraw(); }));
       ap(root, head('Layout'),
-        row('Banner text lists', '“property:Label”, one per line', area(() => t.text.map((x) => `${x.key}:${x.label}`).join('\n'), (v) => { t.text = v.map((x) => { const [k, l] = x.split(':'); return { key: k.trim(), label: (l || k).trim() }; }); })),
+        row('Banner text lists', '“property:Label”, one per line. Add “:tile” to show it as a card in the row below the banner instead (e.g. occupation:Occupation:tile)', area(() => t.text.map((x) => `${x.key}:${x.label}${x.tile ? ':tile' : ''}`).join('\n'), (v) => { t.text = v.map((x) => { const [k, l, p] = x.split(':'); return { key: k.trim(), label: (l || k).trim(), ...(String(p || '').trim() === 'tile' ? { tile: true } : {}) }; }); })),
         row('Text tabs', '“Name|icon”, one per line. Each is a tab you write in. Its text is kept in the note body as a hidden “> [!wk-tab] Name” block.', area(() => t.body.map((b) => `${b.heading}|${b.icon}`).join('\n'), (v) => { t.body = v.map((x) => { const [a, b] = x.split('|'); return { heading: a.trim(), icon: (b || '📄').trim() }; }); })),
         row('Tab order', 'Labels in order; anything unlisted goes last', area(() => (t.tabOrder || []).join('\n'), (v) => { t.tabOrder = v; })));
       if (this.type === 'magic') ap(root, head('Magic system lists'), row('Rule kinds', 'Columns on the Rules & limits tab', area(() => s.ruleKinds.map((r) => r.k).join('\n'), (v) => { s.ruleKinds = v.map((k, i) => s.ruleKinds.find((r) => r.k === k) || { k, c: ['#5b9bd5', '#d9a85a', '#d9534f', '#9b6bd3', '#5fc27e'][i % 5], i: '•' }); })));

@@ -147,7 +147,7 @@ const MOD_LABEL = { relationships: 'Relationships', contains: 'Contains', linked
 const MOD_ICON = { relationships: '👥', contains: '🗺️', linked: '🔗', conlang: '🔤', rules: '⚖️', spellbook: '📖', gods: '🌟', worship: '🙏' };
 const modLabel = (m) => { m = modKey(m); return typeof m === 'object' ? m.ref : MOD_LABEL[m] || m; };
 const modIcon = (m) => { m = modKey(m); return typeof m === 'object' ? m.icon : MOD_ICON[m] || '•'; };
-function tilesOf(id, f) { const t = T()[id]; return [...t.domain.filter((d) => when(d, f)).map((d) => ({ kind: 'domain', def: d })), ...t.links.filter((l) => l.placement === 'tile' && when(l, f)).map((l) => ({ kind: 'link', def: l }))]; }
+function tilesOf(id, f) { const t = T()[id]; return [...t.domain.filter((d) => when(d, f)).map((d) => ({ kind: 'domain', def: d })), ...t.text.filter((x) => x.tile).map((x) => ({ kind: 'text', def: x })), ...t.links.filter((l) => l.placement === 'tile' && when(l, f)).map((l) => ({ kind: 'link', def: l }))]; }
 function tabsOf(id, f) {
   const t = T()[id];
   const all = [...t.body.map((b) => ({ id: 'body:' + b.heading, label: b.heading, icon: b.icon, body: b.heading })), { id: 'details', label: 'Details', icon: '📑' },
