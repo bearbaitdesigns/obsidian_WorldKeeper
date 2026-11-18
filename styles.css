@@ -1183,3 +1183,13 @@
 .wk .enc-main .enc-edit {min-height: 320px; font-family: var(--font-text, inherit);}
 .wk .enc-md {cursor: text;}
 .wk .enc-title-row button {white-space: nowrap;}
+/* table of contents for encyclopedia entries with headings */
+.wk .enc-body.has-toc {display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: 20px; align-items: start;}
+.wk .enc-toc {position: sticky; top: 12px; border: 1px solid var(--cs-line); border-radius: 10px; background: var(--cs-tile-bg); padding: 10px 8px; display: flex; flex-direction: column; gap: 1px; max-height: 70vh; overflow: auto;}
+.wk .enc-toc-title {font-size: .68em; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); padding: 0 8px 6px;}
+.wk .enc-toc-item {display: block; font-size: .85em; line-height: 1.35; padding: 4px 8px; border-radius: 6px; color: var(--text-muted); cursor: pointer; text-decoration: none; border-left: 2px solid transparent;}
+.wk .enc-toc-item:hover {background: var(--background-modifier-hover); color: var(--text-normal);}
+.wk .enc-toc-item.is-current {color: var(--cs-accent); border-left-color: var(--cs-accent); background: color-mix(in srgb, var(--cs-accent) 10%, transparent);}
+.wk .enc-flash {animation: wk-flash 1.2s ease;}
+@keyframes wk-flash {0%, 40% {background: color-mix(in srgb, var(--cs-accent) 25%, transparent);} 100% {background: transparent;}}
+@media (max-width: 900px) {.wk .enc-body.has-toc {grid-template-columns: minmax(0, 1fr);} .wk .enc-toc {position: static; order: -1;}}

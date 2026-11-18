@@ -58,6 +58,16 @@ class EntryChild extends MarkdownRenderChild {
   onload() { this.run = liveRender(this, this.containerEl, () => this.containerEl.replaceChildren(h('div', { class: 'wk' }, h('div', { class: 'cs-root enc-inline' }, renderEntryMeta(this.file), renderEntryFoot(this.file, (o, e) => openFile(o, e)))))); this.run(); }
 }
 
+/** headings in an entry's text (skipping fenced code), for its table of contents */
+function entryHeadings(text) {
+  const out = []; let fence = false;
+  for (const line of String(text || '').split('\n')) {
+    if (/^\s*(```|~~~)/.test(line)) { fence = !fence; continue; }
+    if (fence) continue;
+    const m = line.match(/^(#{1,6})\s+(.+?)\s*#*\s*$/); if (m) out.push({ level: m[1].length, text: m[2].replace(/\[\[([^\]|]+\|)?([^\]]+)\]\]/g, '$2').replace(/[*_`]/g, '') });
+  }
+  return out;
+}
 class EncyclopediaView extends ItemView {
   constructor(leaf) { super(leaf); this.cur = null; this.st = { q: '', cat: '', group: 'cat' }; this.comp = null; }
   getViewType() { return VIEW_ENC; }
@@ -65,6 +75,22 @@ class EncyclopediaView extends ItemView {
   getIcon() { return 'library'; }
   async onOpen() { this.body = this.contentEl.appendChild(h('div', { class: 'wk wk-view' })); this.run = liveRender(this, this.body, () => this.render()); this.run(); }
   show(f) { this.cur = f ? f.path : this.cur; this.run && this.run(); }
+  /** "Contents" box: one link per heading, indented by level; click scrolls to it */
+  renderToc(toc, md) {
+    const min = Math.min(...toc.map((x) => x.level));
+    const items = toc.map((x, i) => {
+      const a = h('a', { class: 'enc-toc-item', style: { 'padding-left': (x.level - min) * 14 + 8 + 'px' } }, x.text);
+      a.addEventListener('click', () => {
+        const hs = [...md.querySelectorAll('h1, h2, h3, h4, h5, h6')]; const target = hs[i] || hs.find((e) => e.textContent.trim() === x.text);
+        if (!target) return; target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.classList.add('enc-flash'); setTimeout(() => target.classList.remove('enc-flash'), 1200);
+        box.querySelectorAll('.is-current').forEach((e) => e.classList.remove('is-current')); a.classList.add('is-current');
+      });
+      return a;
+    });
+    const box = h('nav', { class: 'enc-toc', 'aria-label': 'Contents' }, h('div', { class: 'enc-toc-title' }, 'Contents'), ...items);
+    return box;
+  }
   /** edit the entry's text right here; saves as you type, Esc or Done to finish */
   renderEditor(f, text) {
     const ta = h('textarea', { class: 'cs-text-edit enc-edit', placeholder: 'Write the entry… Markdown works: ## headings, - lists, **bold**, [[links]].' }, text);
@@ -115,7 +141,10 @@ class EncyclopediaView extends ItemView {
       const body = raw.replace(/^---\n[\s\S]*?\n---\n?/, '').replace(/```worldkeeper-entry\s*\n```\s*/g, '').trim();
       if (this.editing === cur.path) ap(main, this.renderEditor(cur, body));
       else {
-        const md = h('div', { class: 'enc-md markdown-rendered', title: 'Double-click to edit' }); ap(main, md);
+        const md = h('div', { class: 'enc-md markdown-rendered', title: 'Double-click to edit' });
+        const toc = entryHeadings(body);
+        if (toc.length) ap(main, h('div', { class: 'enc-body has-toc' }, md, this.renderToc(toc, md)));
+        else ap(main, md);
         md.addEventListener('dblclick', (e) => { if (!e.target.closest('a')) { this.editing = cur.path; this.run(); } });
         if (body) await MarkdownRenderer.render(app(), body, md, cur.path, this.comp);
         else { const e = empty('Empty entry. Click to start writing.'); e.classList.add('is-clickable'); e.addEventListener('click', () => { this.editing = cur.path; this.run(); }); ap(md, e); }
