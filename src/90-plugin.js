@@ -66,6 +66,7 @@ class WorldkeeperPlugin extends Plugin {
 
     this.addSettingTab(new WorldkeeperSettingTab(this));
   }
+  updateHomeTitle() { for (const l of app().workspace.getLeavesOfType(VIEW_HOME)) { if (typeof l.updateHeader === 'function') l.updateHeader(); else if (l.tabHeaderInnerTitleEl) l.tabHeaderInnerTitleEl.setText(l.view.getDisplayText()); } }
   applyLinkStyle() { document.body.classList.toggle('wk-white-links', !!(this.settings && this.settings.whiteLinks)); }
   onunload() { document.body.classList.remove('wk-white-links'); clearTimeout(this._t); closeModal(); document.getElementById('wk-file')?.remove(); }
 

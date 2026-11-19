@@ -7,6 +7,10 @@ Worldkeeper turns ordinary notes into rich, editable sheets for everything in yo
 
 ---
 
+## Milestones & deadlines
+
+The home dashboard has a Milestones & deadlines card: set a deadline for each stage of the book (drafting, revisions, alpha and beta readers, editing, querying) and track progress. Drafting follows your word count goal; reader stages follow how many readers have sent feedback. Rename the home tab from the pencil on its banner, or in Settings → General.
+
 ## Third-party plugins
 
 Worldkeeper has **no hard dependencies**: every feature below works with Obsidian alone. These plugins are needed only for the parts noted:

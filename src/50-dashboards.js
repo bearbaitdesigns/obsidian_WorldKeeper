@@ -169,7 +169,8 @@ async function renderHome(state) {
   const setBanner = async (img) => { nv.banner = S.link(img); if (nv.bannerPosition == null) nv.bannerPosition = 60; await P.saveSettings(); };
   const changeBanner = h('button', {}, bnSrc ? '🖼 Change banner' : '🖼 Add banner');
   changeBanner.addEventListener('click', async (e) => { const [img] = await chooseImages(e, null); if (img) setBanner(img); });
-  const tools = h('div', { class: 'cs-banner-tools hd-tools', 'data-key': '__home' }, pencilToggle(), changeBanner);
+  const renameTab = h('button', { title: 'Rename this tab', onclick: () => prompt2('Name of the home tab', 'Worldkeeper home', async (v) => { s.homeTitle = v.trim() || 'Worldkeeper home'; await P.saveSettings(); P.updateHomeTitle(); }, s.homeTitle || 'Worldkeeper home') }, '🏷 Rename tab');
+  const tools = h('div', { class: 'cs-banner-tools hd-tools', 'data-key': '__home' }, pencilToggle(), changeBanner, renameTab);
   if (bnSrc) {
     const range = h('input', { type: 'range', min: 0, max: 100, value: bY });
     range.addEventListener('input', () => hero.style.setProperty('--y', range.value + '%'));
@@ -198,7 +199,7 @@ async function renderHome(state) {
 
   const colL = h('div', { class: 'hd-col' }), colR = h('div', { class: 'hd-col' });
   ap(root, h('div', { class: 'hd-twocol' }, colL, colR));
-  ap(colL, renderSummary(state)); ap(colR, await renderTodos(state));
+  ap(colL, renderSummary(state)); ap(colR, renderMilestones(state, pct), await renderTodos(state));
 
   /* plot weaver + activity */
   const pwCard = h('div', { class: 'wk-card' });
@@ -228,11 +229,108 @@ async function renderHome(state) {
     h('div', { class: 'cs-hint cs-mt' }, 'Worldkeeper saves your total word count once a day to draw this.'));
   ap(colL, pwCard); ap(colR, actCard);
 
-  /* tree + shared */
-  ap(colL, h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '🗺️ World tree'), h('span', { class: 'sp' }), h('span', { class: 'cs-hint' }, 'Planet › Continent › Kingdom › Place › Hub')), worldTree()));
-  ap(colR, h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '🌐 Shared across the world')), ...[...CROSS, ...DIVINE].map((t) => h('div', { class: 'cs-mb' }, groupTitle(`${T()[t].icon} ${T()[t].plural}`, S.notesOf(t).length),
+  /* shared (below Plot Weaver) */
+  ap(colL, h('div', { class: 'wk-card' }, h('div', { class: 'card-h' }, h('h3', {}, '🌐 Shared across the world')), ...[...CROSS, ...DIVINE].map((t) => h('div', { class: 'cs-mb' }, groupTitle(`${T()[t].icon} ${T()[t].plural}`, S.notesOf(t).length),
       h('div', { class: 'cs-tile-body' }, ...S.notesOf(t).map((n) => chip(n.path, '', { file: n, label: n.basename })))))));
   return root;
+}
+/* ---------- milestones & deadlines (drafting, revisions, alpha/beta readers…) ---------- */
+const MS_KINDS = { Drafting: '✍️', Revision: '🔁', 'Alpha readers': '🅰️', 'Beta readers': '🅱️', Editing: '✂️', 'Copy edit': '🔎', Proofreading: '📝', Querying: '📮', Submission: '📤', Publishing: '📚', Other: '🎯' };
+const MS_READERS = new Set(['Alpha readers', 'Beta readers']);
+const MS_STATUS = { planned: 'Planned', active: 'In progress', done: 'Done' };
+const RD_STATUS = ['Not sent', 'Reading', 'Feedback in'];
+const MS_STANDARD = [['First draft', 'Drafting'], ['Revision', 'Revision'], ['Alpha readers', 'Alpha readers'], ['Second draft', 'Revision'], ['Beta readers', 'Beta readers'], ['Final edit', 'Editing'], ['Querying', 'Querying']];
+function msProgress(m, wordPct) {
+  if (m.status === 'done') return 100;
+  if (m.kind === 'Drafting' && m.auto !== false) return wordPct;
+  if (MS_READERS.has(m.kind) && (m.readers || []).length) return Math.round((m.readers.filter((r) => r.status === 2).length / m.readers.length) * 100);
+  return Math.max(0, Math.min(100, Number(m.progress) || 0));
+}
+function msDays(m) { if (!m.due) return null; return Math.round((new Date(m.due + 'T00:00:00') - new Date(todayISO() + 'T00:00:00')) / 864e5); }
+function msWhen(m) {
+  const d = msDays(m); if (m.status === 'done') return { t: m.due ? 'Done · ' + fmtDate(m.due) : 'Done', c: 'ok' };
+  if (d == null) return { t: 'No deadline', c: '' };
+  if (d < 0) return { t: `${-d} day${d === -1 ? '' : 's'} overdue`, c: 'bad' };
+  if (d === 0) return { t: 'Due today', c: 'warn' };
+  return { t: `${fmtDate(m.due)} · in ${d} day${d === 1 ? '' : 's'}`, c: d <= 7 ? 'warn' : '' };
+}
+function fmtDate(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }); }
+function renderMilestones(state, wordPct) {
+  const nv = ST().novel; if (!Array.isArray(nv.milestones)) nv.milestones = []; const ms = nv.milestones;
+  const save = async () => { await P.saveSettings(); };
+  const edit = !!state.msEdit; const card = h('div', { class: 'wk-card ms-card' });
+  const done = ms.filter((m) => m.status === 'done').length;
+  const next = ms.filter((m) => m.status !== 'done' && m.due).sort((a, b) => a.due.localeCompare(b.due))[0];
+  const nw = next && msWhen(next);
+  ap(card, h('div', { class: 'card-h' }, h('h3', {}, '🎯 Milestones & deadlines'), ms.length ? h('span', { class: 'wk-pill' }, `${done} of ${ms.length} done`) : null,
+    next ? h('span', { class: 'wk-pill ' + (nw.c === 'bad' ? 'bad' : nw.c === 'warn' ? 'warn' : ''), title: 'Next deadline' }, `Next: ${next.name} · ${msDays(next) < 0 ? 'overdue' : msDays(next) === 0 ? 'today' : msDays(next) + 'd'}`) : null,
+    h('span', { class: 'sp' }), h('button', { class: 'wk-sm', onclick: () => { state.msEdit = !edit; state.rerender(); } }, edit ? '✓ Done' : '✎ Edit')));
+  if (!ms.length && !edit) {
+    ap(card, h('div', { class: 'ms-empty' }, h('p', { class: 'cs-hint' }, 'Set deadlines for each stage of the book (drafting, revisions, alpha and beta readers, editing) and track how far along each one is.'),
+      h('div', { class: 'wk-row' }, h('button', { class: 'mod-cta wk-sm', onclick: async () => { nv.milestones = MS_STANDARD.map(([name, kind], i) => ({ id: Date.now().toString(36) + i, name, kind, status: i === 0 ? 'active' : 'planned', due: '', progress: 0, readers: [] })); await save(); } }, 'Add the usual stages'),
+        h('button', { class: 'wk-sm', onclick: () => { state.msEdit = true; state.msAdd = true; state.rerender(); } }, '+ Add a milestone'))));
+    return card;
+  }
+  // pipeline strip
+  if (ms.length) ap(card, h('div', { class: 'ms-strip' }, ...ms.map((m) => { const p = msProgress(m, wordPct); const w = msWhen(m);
+    return h('div', { class: 'ms-seg is-' + m.status + (w.c === 'bad' ? ' is-late' : ''), title: `${m.name}: ${MS_STATUS[m.status]} · ${p}%` }, h('i', { style: { width: p + '%' } })); })));
+  if (!edit) {
+    ap(card, h('div', { class: 'ms-list' }, ...ms.map((m) => {
+      const p = msProgress(m, wordPct); const w = msWhen(m); const rd = m.readers || [];
+      const sub = MS_READERS.has(m.kind) ? (rd.length ? `${rd.length} reader${rd.length === 1 ? '' : 's'} · ${rd.filter((r) => r.status === 1).length} reading · ${rd.filter((r) => r.status === 2).length} sent feedback` : 'No readers added yet')
+        : m.kind === 'Drafting' && m.auto !== false && m.status !== 'done' ? 'Progress follows your word count goal' : m.kind;
+      const row = h('div', { class: 'ms-row is-' + m.status },
+        h('span', { class: 'ms-ic' }, MS_KINDS[m.kind] || '🎯'),
+        h('div', { class: 'ms-mid' }, h('div', { class: 'ms-top' }, h('b', {}, m.name), h('span', { class: 'ms-st is-' + m.status }, MS_STATUS[m.status])),
+          h('div', { class: 'ms-bar' }, h('i', { style: { width: p + '%' } })), h('div', { class: 'ms-sub' }, h('span', {}, sub), h('span', { class: 'ms-when ' + w.c }, w.t))),
+        h('span', { class: 'ms-pct' }, p + '%'));
+      row.addEventListener('click', () => { state.msEdit = true; state.msOpen = m.id; state.rerender(); }); row.title = 'Click to edit';
+      return row;
+    })));
+    return card;
+  }
+  // edit mode
+  const list = h('div', { class: 'ms-edit-list' });
+  ms.forEach((m, i) => {
+    const set = async (k, v) => { m[k] = v; await save(); };
+    const name = h('input', { type: 'text', value: m.name, placeholder: 'Milestone name' }); name.addEventListener('change', () => set('name', name.value.trim() || 'Milestone'));
+    const kind = h('select', { class: 'dropdown' }, ...Object.keys(MS_KINDS).map((k) => h('option', { value: k, selected: k === m.kind }, `${MS_KINDS[k]} ${k}`))); kind.addEventListener('change', () => set('kind', kind.value));
+    const status = h('select', { class: 'dropdown' }, ...Object.entries(MS_STATUS).map(([k, l]) => h('option', { value: k, selected: k === m.status }, l))); status.addEventListener('change', () => set('status', status.value));
+    const start = h('input', { type: 'date', value: m.start || '' }); start.addEventListener('change', () => set('start', start.value));
+    const due = h('input', { type: 'date', value: m.due || '' }); due.addEventListener('change', () => set('due', due.value));
+    const autoP = m.kind === 'Drafting' && m.auto !== false; const rdP = MS_READERS.has(m.kind) && (m.readers || []).length;
+    const prog = h('input', { type: 'range', min: 0, max: 100, step: 5, value: msProgress(m, wordPct), disabled: autoP || rdP });
+    const progL = h('span', { class: 'ms-pct' }, msProgress(m, wordPct) + '%');
+    prog.addEventListener('input', () => { progL.textContent = prog.value + '%'; }); prog.addEventListener('change', () => set('progress', +prog.value));
+    const progRow = h('div', { class: 'ms-f' }, h('label', {}, 'Progress'), h('div', { class: 'wk-row' }, prog, progL,
+      m.kind === 'Drafting' ? h('label', { class: 'ms-auto' }, ((c) => { c.addEventListener('change', () => set('auto', c.checked)); return c; })(h('input', { type: 'checkbox', checked: m.auto !== false })), 'from word count') : null,
+      rdP ? h('span', { class: 'cs-hint' }, 'from readers who sent feedback') : null));
+    let readers = null;
+    if (MS_READERS.has(m.kind)) {
+      m.readers = m.readers || [];
+      readers = h('div', { class: 'ms-f' }, h('label', {}, 'Readers'), h('div', { class: 'ms-readers' },
+        ...m.readers.map((r, j) => h('span', { class: 'ms-reader is-s' + r.status, title: 'Click to change: Not sent → Reading → Feedback in' },
+          h('span', { onclick: async () => { r.status = (r.status + 1) % 3; await save(); } }, `${r.name} · ${RD_STATUS[r.status]}`),
+          h('span', { class: 'cs-x', onclick: async () => { m.readers.splice(j, 1); await save(); } }, '✕'))),
+        h('button', { class: 'cs-add', title: 'Add a reader', onclick: () => prompt2('Add a reader', 'Name…', async (v) => { m.readers.push({ name: v.trim(), status: 0 }); await save(); }) }, '+')));
+    }
+    const notes = h('input', { type: 'text', value: m.note || '', placeholder: 'Note (optional)' }); notes.addEventListener('change', () => set('note', notes.value));
+    const move = async (dir) => { const j = i + dir; if (j < 0 || j >= ms.length) return; [ms[i], ms[j]] = [ms[j], ms[i]]; await save(); };
+    const box = h('details', { class: 'ms-ed', open: state.msOpen === m.id || state.msAdd && i === ms.length - 1 },
+      h('summary', {}, h('span', { class: 'ms-ic' }, MS_KINDS[m.kind] || '🎯'), h('b', {}, m.name), h('span', { class: 'ms-when ' + msWhen(m).c }, msWhen(m).t), h('span', { class: 'sp' }),
+        h('button', { class: 'wk-sm clickable-icon', title: 'Move up', disabled: i === 0, onclick: (e) => { e.preventDefault(); move(-1); } }, '↑'),
+        h('button', { class: 'wk-sm clickable-icon', title: 'Move down', disabled: i === ms.length - 1, onclick: (e) => { e.preventDefault(); move(1); } }, '↓'),
+        h('button', { class: 'wk-sm clickable-icon', title: 'Delete', onclick: (e) => { e.preventDefault(); confirm2(`Delete “${m.name}”?`, null, async () => { ms.splice(i, 1); await save(); }, 'Delete'); } }, '🗑')),
+      h('div', { class: 'ms-grid' }, h('div', { class: 'ms-f' }, h('label', {}, 'Name'), name), h('div', { class: 'ms-f' }, h('label', {}, 'Stage'), kind),
+        h('div', { class: 'ms-f' }, h('label', {}, 'Start'), start), h('div', { class: 'ms-f' }, h('label', {}, 'Deadline'), due), h('div', { class: 'ms-f' }, h('label', {}, 'Status'), status)),
+      progRow, readers, h('div', { class: 'ms-f' }, h('label', {}, 'Note'), notes));
+    box.addEventListener('toggle', () => { if (box.open) state.msOpen = m.id; });
+    ap(list, box);
+  });
+  state.msAdd = false;
+  ap(card, list, h('div', { class: 'wk-row cs-mt' }, h('button', { class: 'wk-sm', onclick: async () => { const id = Date.now().toString(36); ms.push({ id, name: 'New milestone', kind: 'Other', status: 'planned', due: '', progress: 0, readers: [] }); state.msOpen = id; await save(); } }, '+ Add milestone'),
+    !ms.length ? h('button', { class: 'wk-sm', onclick: async () => { nv.milestones = MS_STANDARD.map(([name, kind], i) => ({ id: Date.now().toString(36) + i, name, kind, status: i === 0 ? 'active' : 'planned', due: '', progress: 0, readers: [] })); await save(); } }, 'Add the usual stages') : null));
+  return card;
 }
 function renderSummary(state) {
   const nv = ST().novel; const card = h('div', { class: 'wk-card sm-card' });
@@ -354,7 +452,7 @@ async function renderTodos(state) {
 class HomeView extends ItemView {
   constructor(leaf) { super(leaf); this.state = {}; }
   getViewType() { return VIEW_HOME; }
-  getDisplayText() { return 'Worldkeeper home'; }
+  getDisplayText() { return (ST().homeTitle || '').trim() || 'Worldkeeper home'; }
   getIcon() { return 'globe'; }
   async onOpen() { this.body = this.contentEl.appendChild(h('div', { class: 'wk wk-view' })); this.state.rerender = () => this.run(); this.run = liveRender(this, this.body, async () => this.body.replaceChildren(await renderHome(this.state))); this.run(); }
 }

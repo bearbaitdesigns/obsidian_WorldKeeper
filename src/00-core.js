@@ -141,7 +141,7 @@ const DEFAULT_TYPES = {
 
 const DEFAULT_SETTINGS = {
   root: 'World', folderMode: 'flat', encFolder: '{root}/Encyclopedia/{category}', entryType: 'entry', templatesFolder: 'Templates',
-  accentColor: '', showTitle: true, whiteLinks: true, defaultBannerStyle: 'clear',
+  accentColor: '', showTitle: true, homeTitle: 'Worldkeeper home', whiteLinks: true, defaultBannerStyle: 'clear',
   imageKey: 'image', bannerKey: 'banner', galleryKey: 'gallery', detailsKey: 'details', relationshipKey: 'relationships',
   relationshipTypes: ['Ally', 'Rival', 'Enemy', 'Parent', 'Child', 'Sibling', 'Partner', 'Mentor', 'Student', 'Friend', 'Worshipper', 'Master', 'Servant'],
   posList: ['noun', 'verb', 'adj', 'adv', 'pron', 'prep', 'conj', 'particle', 'num'],
@@ -149,7 +149,7 @@ const DEFAULT_SETTINGS = {
   divineRanks: ['Elder', 'Greater', 'Lesser', 'Demigod', 'Saint'],
   encCategories: ['History', 'Geography', 'Religion', 'Magic', 'Politics', 'Culture', 'Flora & Fauna', 'Technology', 'Timeline', 'Glossary', 'Miscellany'],
   todoFile: 'Worldkeeper/To-do.md', todoScope: 'all', todoFields: 'To-Do, todo, todos', todoTags: ['Writing', 'Worldbuilding', 'Revision', 'Research', 'Admin'],
-  novel: { title: 'My Novel', series: '', genre: [], pov: '', audience: '', logline: '', synopsis: '', goal: 80000, deadline: '', stage: 'First draft', manualWords: 0, banner: '', bannerPosition: 60, bannerStyle: 'clear' },
+  novel: { title: 'My Novel', series: '', genre: [], pov: '', audience: '', logline: '', synopsis: '', goal: 80000, deadline: '', stage: 'First draft', manualWords: 0, banner: '', bannerPosition: 60, bannerStyle: 'clear', milestones: [] },
   plotweaver: { enabled: true, novel: '' },
   history: {},
   types: DEFAULT_TYPES,

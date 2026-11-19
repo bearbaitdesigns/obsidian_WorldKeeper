@@ -1211,3 +1211,46 @@ body.wk-white-links a.internal-link:not(.is-unresolved), body.wk-white-links .cm
 body.wk-white-links a.internal-link:not(.is-unresolved):hover, body.wk-white-links .cm-hmd-internal-link .cm-underline:hover {text-decoration-color: currentColor;}
 /* also when a theme colours links directly instead of through --link-color */
 body.wk-white-links a.internal-link:not(.is-unresolved), body.wk-white-links .cm-hmd-internal-link:not(.is-unresolved), body.wk-white-links .cm-hmd-internal-link .cm-underline {color: var(--link-color) !important;}
+/* milestones & deadlines card */
+.wk .wk-pill.bad {background: rgba(210,80,80,.18); color: #e27a7a;}
+.wk .ms-strip {display: flex; gap: 4px; margin: 4px 0 12px;}
+.wk .ms-seg {flex: 1; height: 8px; border-radius: 4px; background: var(--background-modifier-border); overflow: hidden;}
+.wk .ms-seg i {display: block; height: 100%; background: var(--cs-accent);}
+.wk .ms-seg.is-done i {background: #5fc27e;}
+.wk .ms-seg.is-late {box-shadow: 0 0 0 1px #e27a7a;}
+.wk .ms-list {display: flex; flex-direction: column; gap: 4px;}
+.wk .ms-row {display: grid; grid-template-columns: 28px minmax(0,1fr) 42px; align-items: center; gap: 10px; padding: 8px 8px; border-radius: 8px; cursor: pointer;}
+.wk .ms-row:hover {background: var(--background-modifier-hover);}
+.wk .ms-row.is-done b {color: var(--text-muted);}
+.wk .ms-ic {font-size: 1.05em; text-align: center;}
+.wk .ms-top {display: flex; align-items: center; gap: 8px; min-width: 0;}
+.wk .ms-top b {font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.wk .ms-st {font-size: .68em; text-transform: uppercase; letter-spacing: .06em; padding: 1px 7px; border-radius: 99px; background: var(--background-modifier-border); color: var(--text-muted); white-space: nowrap;}
+.wk .ms-st.is-active {background: color-mix(in srgb, var(--cs-accent) 22%, transparent); color: var(--cs-accent);}
+.wk .ms-st.is-done {background: rgba(60,170,90,.18); color: #5fc27e;}
+.wk .ms-bar {height: 5px; border-radius: 3px; background: var(--background-modifier-border); margin: 5px 0 4px; overflow: hidden;}
+.wk .ms-bar i {display: block; height: 100%; background: var(--cs-accent); border-radius: 3px;}
+.wk .ms-row.is-done .ms-bar i {background: #5fc27e;}
+.wk .ms-sub {display: flex; justify-content: space-between; gap: 8px; font-size: .78em; color: var(--text-muted);}
+.wk .ms-sub > span:first-child {overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.wk .ms-when {white-space: nowrap;}
+.wk .ms-when.warn {color: #d9a85a;} .wk .ms-when.bad {color: #e27a7a; font-weight: 600;} .wk .ms-when.ok {color: #5fc27e;}
+.wk .ms-pct {font-size: .82em; font-variant-numeric: tabular-nums; color: var(--text-muted); text-align: right;}
+.wk .ms-empty p {margin: 0 0 10px;}
+.wk .ms-edit-list {display: flex; flex-direction: column; gap: 6px;}
+.wk .ms-ed {border: 1px solid var(--cs-line, var(--background-modifier-border)); border-radius: 8px; padding: 0 10px;}
+.wk .ms-ed > summary {display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; list-style: none; font-size: .9em;}
+.wk .ms-ed > summary::-webkit-details-marker {display: none;}
+.wk .ms-ed > summary .ms-when {font-size: .85em; color: var(--text-muted);}
+.wk .ms-ed[open] > summary {border-bottom: 1px solid var(--background-modifier-border); margin-bottom: 8px;}
+.wk .ms-grid {display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 10px;}
+.wk .ms-f {display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; min-width: 0;}
+.wk .ms-f > label {font-size: .68em; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 600;}
+.wk .ms-f input[type=text], .wk .ms-f input[type=date], .wk .ms-f select {width: 100%;}
+.wk .ms-f input[type=range] {flex: 1;}
+.wk .ms-auto {display: flex; align-items: center; gap: 4px; font-size: .8em; color: var(--text-muted);}
+.wk .ms-readers {display: flex; flex-wrap: wrap; gap: 6px; align-items: center;}
+.wk .ms-reader {display: inline-flex; align-items: center; gap: 6px; font-size: .8em; padding: 3px 8px; border-radius: 99px; background: var(--background-modifier-border); cursor: pointer;}
+.wk .ms-reader.is-s1 {background: color-mix(in srgb, var(--cs-accent) 22%, transparent);}
+.wk .ms-reader.is-s2 {background: rgba(60,170,90,.2); color: #5fc27e;}
+.wk .ms-ed > summary .sp {flex: 1;} .wk .ms-ed > summary button {padding: 2px 8px;}
